@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:order_pad/screens/02_new_order/new_order_screen.dart';
+import 'package:order_pad/screens/05_menu_management/menu_management_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 Future<void> main() async {
@@ -16,7 +16,16 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GetMaterialApp(home:NewOrderScreen()
+    return GetMaterialApp(
+      theme: ThemeData(
+        useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF056B4C)).copyWith(
+          secondary: const Color(0xFFE59D1B),
+          tertiary: const Color(0xFF9FCCD5),
+          error: const Color(0xFFD32F2F),
+        ),
+      ),
+      home: MenuManagementScreen(),
     );
   }
 }
