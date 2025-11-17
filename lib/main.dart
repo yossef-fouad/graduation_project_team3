@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:order_pad/screens/02_new_order/main_navigation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-
+//test
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Supabase.initialize(url: 'https://bdizroznvlkmtpojsjbq.supabase.co', anonKey:
