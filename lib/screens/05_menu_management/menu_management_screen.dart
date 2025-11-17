@@ -3,18 +3,24 @@ import 'package:get/get.dart';
 import 'package:order_pad/main.dart';
 import 'package:order_pad/models/category.dart';
 import 'package:order_pad/models/meal_item.dart';
+import 'package:order_pad/widgets/meal_card.dart';
+import 'package:order_pad/widgets/category_card.dart';
 
 class MenuController extends GetxController {
   final RxList<Category> categories = <Category>[].obs;
   final RxList<MealItem> meals = <MealItem>[].obs;
   final RxBool loading = false.obs;
   final RxString selectedCategoryId = ''.obs;
+  final RxBool loadingMore = false.obs;
+  final RxBool hasMore = true.obs;
+  final int pageSize = 10;
+  int mealOffset = 0;
 
   @override
   void onInit() {
     super.onInit();
     fetchCategories();
-    fetchMeals();
+    fetchMeals(reset: true);
   }
 
   Future<void> fetchCategories() async {
@@ -24,16 +30,42 @@ class MenuController extends GetxController {
     loading.value = false;
   }
 
-  Future<void> fetchMeals() async {
+  Future<void> fetchMeals({bool reset = false}) async {
     loading.value = true;
-    List<dynamic> res;
-    if (selectedCategoryId.value.isNotEmpty) {
-      res = await cloud.from('meals').select().eq('category_id', selectedCategoryId.value).order('name');
-    } else {
-      res = await cloud.from('meals').select().order('name');
+    if (reset) {
+      mealOffset = 0;
+      meals.clear();
+      hasMore.value = true;
     }
-    meals.assignAll(res.map((e) => MealItem.fromMap(e as Map<String, dynamic>)).toList());
+    final from = mealOffset;
+    final to = mealOffset + pageSize - 1;
+    final base = cloud.from('meals').select();
+    final filtered = selectedCategoryId.value.isNotEmpty
+        ? base.eq('category_id', selectedCategoryId.value)
+        : base;
+    final res = await filtered.order('name').range(from, to);
+    final fetched = (res as List).map((e) => MealItem.fromMap(e as Map<String, dynamic>)).toList();
+    meals.addAll(fetched);
+    mealOffset += fetched.length;
+    hasMore.value = fetched.length == pageSize;
     loading.value = false;
+  }
+
+  Future<void> loadMoreMeals() async {
+    if (!hasMore.value || loadingMore.value) return;
+    loadingMore.value = true;
+    final from = mealOffset;
+    final to = mealOffset + pageSize - 1;
+    final base = cloud.from('meals').select();
+    final filtered = selectedCategoryId.value.isNotEmpty
+        ? base.eq('category_id', selectedCategoryId.value)
+        : base;
+    final res = await filtered.order('name').range(from, to);
+    final fetched = (res as List).map((e) => MealItem.fromMap(e as Map<String, dynamic>)).toList();
+    meals.addAll(fetched);
+    mealOffset += fetched.length;
+    hasMore.value = fetched.length == pageSize;
+    loadingMore.value = false;
   }
 
   Future<void> addCategory(String name) async {
@@ -68,7 +100,7 @@ class MenuController extends GetxController {
       'category_id': categoryId,
       'is_available': true,
     });
-    await fetchMeals();
+    await fetchMeals(reset: true);
   }
 
   Future<void> updateMeal(
@@ -89,17 +121,17 @@ class MenuController extends GetxController {
     if (isAvailable != null) update['is_available'] = isAvailable;
     if (update.isEmpty) return;
     await cloud.from('meals').update(update).eq('id', meal.id);
-    await fetchMeals();
+    await fetchMeals(reset: true);
   }
 
   Future<void> deleteMeal(String id) async {
     await cloud.from('meals').delete().eq('id', id);
-    await fetchMeals();
+    await fetchMeals(reset: true);
   }
 
   void setCategoryFilter(String? id) {
     selectedCategoryId.value = id ?? '';
-    fetchMeals();
+    fetchMeals(reset: true);
   }
 }
 
@@ -131,12 +163,12 @@ class MenuManagementScreen extends StatelessWidget {
                     separatorBuilder: (_, __) => const Divider(height: 1),
                     itemBuilder: (_, i) {
                       final cat = c.categories[i];
-                      return ListTile(
-                        title: Text(cat.name),
-                        trailing: Row(mainAxisSize: MainAxisSize.min, children: [
-                          IconButton(onPressed: () => _showEditCategoryDialog(context, c, cat), icon: const Icon(Icons.edit)),
-                          IconButton(onPressed: () => c.deleteCategory(cat.id), icon: const Icon(Icons.delete, color: Colors.red)),
-                        ]),
+                      final color = _categoryColor(cat.name);
+                      return CategoryCard(
+                        name: cat.name,
+                        accentColor: color,
+                        onEdit: () => _showEditCategoryDialog(context, c, cat),
+                        onDelete: () => c.deleteCategory(cat.id),
                       );
                     },
                   ),
@@ -154,30 +186,47 @@ class MenuManagementScreen extends StatelessWidget {
                   ]),
                 ),
                 Expanded(
-                  child: ListView.separated(
-                    itemCount: c.meals.length,
-                    separatorBuilder: (_, __) => const Divider(height: 1),
-                    itemBuilder: (_, i) {
-                      final m = c.meals[i];
-                      final catName = c.categories
+                  child: NotificationListener<ScrollNotification>(
+                    onNotification: (n) {
+                      if (n.metrics.pixels >= n.metrics.maxScrollExtent - 100) {
+                        c.loadMoreMeals();
+                      }
+                      return false;
+                    },
+                    child: ListView.separated(
+                      itemCount: c.meals.length,
+                      separatorBuilder: (_, __) => const Divider(height: 1),
+                      itemBuilder: (_, i) {
+                        final m = c.meals[i];
+                        final catName = c.categories
                           .firstWhere(
                             (x) => x.id == m.categoryId,
                             orElse: () => Category(id: '', name: 'Uncategorized'),
                           )
                           .name;
-                      return ListTile(
-                        leading: _MealImage(url: m.imageUrl),
-                        title: Text(m.name),
-                        subtitle: Text('$catName • ${m.price.toStringAsFixed(2)}'),
-                        trailing: Row(mainAxisSize: MainAxisSize.min, children: [
-                          IconButton(onPressed: () => _showEditMealDialog(context, c, m), icon: const Icon(Icons.edit)),
-                          IconButton(onPressed: () => c.updateMeal(m, isAvailable: !m.isAvailable), icon: Icon(m.isAvailable ? Icons.visibility : Icons.visibility_off)),
-                          IconButton(onPressed: () => c.deleteMeal(m.id), icon: const Icon(Icons.delete, color: Colors.red)),
-                        ]),
-                      );
-                    },
+                        final catObj = c.categories.firstWhere(
+                          (x) => x.name == catName,
+                          orElse: () => Category(id: '', name: 'Uncategorized'),
+                        );
+                        final accent = catObj.id.isEmpty ? Colors.grey : _categoryColor(catObj.name);
+                        return MealCard(
+                          meal: m,
+                          categoryName: catName,
+                          accentColor: accent,
+                          onEdit: () => _showEditMealDialog(context, c, m),
+                          onToggleAvailable: () => c.updateMeal(m, isAvailable: !m.isAvailable),
+                          onDelete: () => c.deleteMeal(m.id),
+                        );
+                      },
+                    ),
                   ),
                 ),
+                Obx(() => c.loadingMore.value
+                    ? const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 12),
+                        child: SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2)),
+                      )
+                    : const SizedBox.shrink()),
               ])),
         ]),
       ),
@@ -310,17 +359,7 @@ class MenuManagementScreen extends StatelessWidget {
   }
 }
 
-class _MealImage extends StatelessWidget {
-  final String? url;
-  const _MealImage({required this.url});
-  @override
-  Widget build(BuildContext context) {
-    if (url == null || url!.isEmpty) {
-      return const CircleAvatar(child: Icon(Icons.fastfood));
-    }
-    return CircleAvatar(backgroundImage: NetworkImage(url!));
-  }
-}
+ 
 
 class _CategoryFilter extends StatelessWidget {
   final MenuController c;
@@ -333,11 +372,34 @@ class _CategoryFilter extends StatelessWidget {
         value: value,
         items: [
           const DropdownMenuItem<String>(value: '', child: Text('All Categories')),
-          ...c.categories.map((e) => DropdownMenuItem<String>(value: e.id, child: Text(e.name))).toList(),
+          ...c.categories.map((e) {
+            final color = _categoryColor(e.name);
+            return DropdownMenuItem<String>(
+              value: e.id,
+              child: Row(children: [
+                Container(width: 10, height: 10, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+                const SizedBox(width: 8),
+                Text(e.name),
+              ]),
+            );
+          }).toList(),
         ],
         onChanged: (v) => c.setCategoryFilter(v),
         decoration: const InputDecoration(labelText: 'Filter'),
       );
     });
   }
+}
+
+final categoryPalette = {
+  'Appetizers': Colors.orange,
+  'Main Courses': Colors.blue,
+  'Drinks': Colors.green,
+  'Desserts': Colors.pink,
+};
+Color _categoryColor(String name) {
+  final c = categoryPalette[name];
+  if (c != null) return c;
+  final h = name.codeUnits.fold<int>(0, (a, b) => a + b) % 360;
+  return HSLColor.fromAHSL(1, h.toDouble(), 0.6, 0.5).toColor();
 }
