@@ -27,4 +27,24 @@ class MealItem {
       isAvailable: (m['is_available'] ?? true) as bool,
     );
   }
+
+  MealItem copyWith({
+    String? id,
+    String? categoryId,
+    String? name,
+    String? description,
+    double? price,
+    String? imageUrl,
+    bool? isAvailable,
+  }) {
+    return MealItem(
+      id: id ?? this.id,
+      categoryId: categoryId ?? this.categoryId,
+      name: name ?? this.name,
+      description: description ?? this.description,
+      price: price ?? this.price,
+      imageUrl: imageUrl ?? this.imageUrl,
+      isAvailable: isAvailable ?? this.isAvailable,
+    );
+  }
 }
