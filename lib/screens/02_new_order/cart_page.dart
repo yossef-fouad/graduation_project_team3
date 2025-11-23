@@ -1,57 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/svg.dart';
-import 'package:order_pad/models/category_model.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:get/get.dart';
+import 'package:order_pad/services/cart_controller.dart';
+import 'package:order_pad/services/order_service.dart';
 import 'package:order_pad/widgets/colors.dart';
+import 'package:order_pad/widgets/customer_phone_bottom_sheet.dart';
 
-class CartPage extends StatefulWidget {
-  final List<ProductModel> cartItems;
-  final Function(ProductModel) onRemoveItem;
-  final Function(ProductModel) onAddItem;
-  final Function(ProductModel, int) onUpdateQuantity;
-
-  const CartPage({
-    super.key,
-    required this.cartItems,
-    required this.onRemoveItem,
-    required this.onAddItem,
-    required this.onUpdateQuantity,
-  });
-
-  @override
-  State<CartPage> createState() => _CartPageState();
-}
-
-class _CartPageState extends State<CartPage> {
-  Map<ProductModel, int> itemQuantities = {};
-
-  @override
-  void initState() {
-    super.initState();
-    // Initialize quantities
-    for (var item in widget.cartItems) {
-      itemQuantities[item] = 1;
-    }
-  }
-
-  double get totalAmount {
-    double total = 0;
-    itemQuantities.forEach((item, quantity) {
-      total += double.parse(item.price) * quantity;
-    });
-    return total;
-  }
-
-  void updateQuantity(ProductModel item, int newQuantity) {
-    setState(() {
-      if (newQuantity <= 0) {
-        itemQuantities.remove(item);
-        widget.onRemoveItem(item);
-      } else {
-        itemQuantities[item] = newQuantity;
-        widget.onUpdateQuantity(item, newQuantity);
-      }
-    });
-  }
+class CartPage extends StatelessWidget {
+  const CartPage({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -73,72 +29,351 @@ class _CartPageState extends State<CartPage> {
           ),
         ),
         centerTitle: true,
-        actions: [
-          IconButton(
-            icon: SvgPicture.asset("assets/icons/basket.svg"),
-            onPressed: () {},
-          ),
-        ],
       ),
-      body: widget.cartItems.isEmpty
-          ? Center(
+      body: GetBuilder<CartController>(
+        builder: (controller) {
+          if (controller.cartMealsList.isEmpty) {
+            return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  SvgPicture.asset(
-                    "assets/icons/basket.svg",
-                    width: 80,
-                    height: 80,
-                    color: Colors.grey,
+                  Icon(
+                    Icons.shopping_cart_outlined,
+                    size: 100,
+                    color: Colors.grey.shade300,
                   ),
                   SizedBox(height: 20),
                   Text(
                     'Your cart is empty',
                     style: TextStyle(
-                      fontSize: 18,
+                      fontSize: 20,
                       fontWeight: FontWeight.bold,
-                      color: Colors.grey,
+                      color: Colors.grey.shade600,
                     ),
                   ),
                   SizedBox(height: 10),
                   Text(
                     'Add items to get started',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey,
-                    ),
+                    style: TextStyle(fontSize: 14, color: Colors.grey.shade500),
                   ),
                 ],
               ),
-            )
-          : Column(
-              children: [
-                // Delivery info
-                Container(
-                  margin: EdgeInsets.all(16),
+            );
+          }
+
+          return Column(
+            children: [
+              // Cart items list
+              Expanded(
+                child: ListView.builder(
                   padding: EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade50,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    children: [
-                      SvgPicture.asset("assets/icons/motor.svg", width: 24),
-                      SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Delivery to',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey,
-                              ),
+                  itemCount: controller.cartMealsList.length,
+                  itemBuilder: (context, index) {
+                    final meal = controller.cartMealsList[index];
+                    final quantity = controller.getQuantity(meal.id);
+
+                    return Container(
+                      margin: EdgeInsets.only(bottom: 16),
+                      padding: EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.withOpacity(0.15),
+                            spreadRadius: 1,
+                            blurRadius: 6,
+                            offset: Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        children: [
+                          // Product image
+                          Container(
+                            width: 70,
+                            height: 70,
+                            decoration: BoxDecoration(
+                              color: AppColors.tertiary.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(10),
                             ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(10),
+                              child:
+                                  meal.imageUrl != null &&
+                                          meal.imageUrl!.isNotEmpty
+                                      ? CachedNetworkImage(
+                                        imageUrl: meal.imageUrl!,
+                                        fit: BoxFit.cover,
+                                        placeholder:
+                                            (context, url) => Center(
+                                              child: CircularProgressIndicator(
+                                                strokeWidth: 2,
+                                                color: AppColors.primary,
+                                              ),
+                                            ),
+                                        errorWidget:
+                                            (context, url, error) => Icon(
+                                              Icons.restaurant,
+                                              color: AppColors.primary
+                                                  .withOpacity(0.3),
+                                              size: 32,
+                                            ),
+                                      )
+                                      : Icon(
+                                        Icons.restaurant,
+                                        color: AppColors.primary.withOpacity(
+                                          0.3,
+                                        ),
+                                        size: 32,
+                                      ),
+                            ),
+                          ),
+                          SizedBox(width: 12),
+
+                          // Product details
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  meal.name,
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                SizedBox(height: 4),
+                                Text(
+                                  '\$${meal.price.toStringAsFixed(2)}',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: AppColors.primary,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          // Quantity controls
+                          Row(
+                            children: [
+                              // Decrease button
+                              GestureDetector(
+                                onTap:
+                                    () => controller.updateQuantity(
+                                      meal.id,
+                                      quantity - 1,
+                                    ),
+                                child: Container(
+                                  width: 32,
+                                  height: 32,
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey.shade200,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Icon(Icons.remove, size: 18),
+                                ),
+                              ),
+                              SizedBox(width: 12),
+
+                              // Quantity
+                              Text(
+                                quantity.toString(),
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              SizedBox(width: 12),
+
+                              // Increase button
+                              GestureDetector(
+                                onTap:
+                                    () => controller.updateQuantity(
+                                      meal.id,
+                                      quantity + 1,
+                                    ),
+                                child: Container(
+                                  width: 32,
+                                  height: 32,
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primary,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Icon(
+                                    Icons.add,
+                                    size: 18,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+
+              // Bottom section with total and submit button
+              Container(
+                padding: EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.2),
+                      blurRadius: 10,
+                      offset: Offset(0, -5),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    // Total
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Total',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Text(
+                          '\$${controller.totalAmount.toStringAsFixed(2)}',
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    SizedBox(height: 16),
+
+                    // Submit Order button
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () async {
+                          print('🟢 [CartPage] Submit Order button pressed');
+                          print(
+                            '🟢 [CartPage] Total items: ${controller.totalItems}',
+                          );
+                          print(
+                            '🟢 [CartPage] Total amount: \$${controller.totalAmount.toStringAsFixed(2)}',
+                          );
+
+                          await showCustomerPhoneBottomSheet(
+                            context: context,
+                            onSubmit: (phoneNumber) async {
+                              try {
+                                print(
+                                  '🟢 [CartPage] Phone number entered: $phoneNumber',
+                                );
+                                print('🟢 [CartPage] Preparing cart items...');
+
+                                final cartItems = controller.getCartItemsMap();
+                                print(
+                                  '🟢 [CartPage] Cart items prepared: ${cartItems.length} items',
+                                );
+
+                                // Submit order
+                                print(
+                                  '🟢 [CartPage] Calling OrderService.submitOrder...',
+                                );
+                                final orderId = await OrderService.submitOrder(
+                                  customerPhone: phoneNumber,
+                                  totalPrice: controller.totalAmount,
+                                  items: cartItems,
+                                );
+
+                                print(
+                                  '🟢 [CartPage] Order submitted successfully! Order ID: $orderId',
+                                );
+
+                                // Close bottom sheet
+                                Navigator.of(context).pop();
+
+                                // Clear cart
+                                print('🟢 [CartPage] Clearing cart...');
+                                controller.clearCart();
+
+                                // Show success message
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Row(
+                                      children: [
+                                        Icon(
+                                          Icons.check_circle,
+                                          color: Colors.white,
+                                        ),
+                                        SizedBox(width: 12),
+                                        Expanded(
+                                          child: Text(
+                                            'Order submitted successfully!',
+                                            style: TextStyle(fontSize: 16),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    backgroundColor: AppColors.primary,
+                                    duration: Duration(seconds: 3),
+                                  ),
+                                );
+
+                                // Navigate back
+                                Navigator.of(context).pop();
+                                print(
+                                  '🟢 [CartPage] Order submission flow completed',
+                                );
+                              } catch (e) {
+                                print(
+                                  '🔴 [CartPage] Error during order submission: $e',
+                                );
+                                print(
+                                  '🔴 [CartPage] Error type: ${e.runtimeType}',
+                                );
+
+                                // Show error
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      'Error: ${e.toString()}',
+                                      style: TextStyle(color: Colors.white),
+                                    ),
+                                    backgroundColor: AppColors.error,
+                                    duration: Duration(seconds: 3),
+                                  ),
+                                );
+                              }
+                            },
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          padding: EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.shopping_bag, color: Colors.white),
+                            SizedBox(width: 8),
                             Text(
-                              '61 Hopper street..',
+                              'Submit Order (${controller.totalItems} items)',
                               style: TextStyle(
+                                color: Colors.white,
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -146,268 +381,14 @@ class _CartPageState extends State<CartPage> {
                           ],
                         ),
                       ),
-                      Icon(Icons.keyboard_arrow_down_rounded),
-                    ],
-                  ),
-                ),
-
-                // Cart items
-                Expanded(
-                  child: ListView.builder(
-                    padding: EdgeInsets.symmetric(horizontal: 16),
-                    itemCount: itemQuantities.length,
-                    itemBuilder: (context, index) {
-                      final item = itemQuantities.keys.elementAt(index);
-                      final quantity = itemQuantities[item]!;
-                      
-                      return Container(
-                        margin: EdgeInsets.only(bottom: 16),
-                        padding: EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.grey.withOpacity(0.1),
-                              spreadRadius: 1,
-                              blurRadius: 4,
-                              offset: Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: Row(
-                          children: [
-                            // Product image
-                            Container(
-                              width: 60,
-                              height: 60,
-                              decoration: BoxDecoration(
-                                color: Colors.grey.shade50,
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Padding(
-                                padding: EdgeInsets.all(8),
-                                child: Image.asset(
-                                  item.image,
-                                  fit: BoxFit.contain,
-                                ),
-                              ),
-                            ),
-                            SizedBox(width: 16),
-                            
-                            // Product details
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    '4 Bunch of ${item.name.toLowerCase()}',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  SizedBox(height: 4),
-                                  Text(
-                                    '\$${item.price}',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      color: Colors.grey,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            
-                            // Quantity controls and delete
-                            Column(
-                              children: [
-                                // Delete button
-                                GestureDetector(
-                                  onTap: () => updateQuantity(item, 0),
-                                  child: Container(
-                                    padding: EdgeInsets.all(4),
-                                    child: Icon(
-                                      Icons.delete_outline,
-                                      color: Colors.grey,
-                                      size: 20,
-                                    ),
-                                  ),
-                                ),
-                                SizedBox(height: 8),
-                                
-                                // Quantity controls
-                                Row(
-                                  children: [
-                                    GestureDetector(
-                                      onTap: () => updateQuantity(item, quantity - 1),
-                                      child: Container(
-                                        width: 30,
-                                        height: 30,
-                                        decoration: BoxDecoration(
-                                          color: Colors.grey.shade200,
-                                          borderRadius: BorderRadius.circular(6),
-                                        ),
-                                        child: Icon(Icons.remove, size: 16),
-                                      ),
-                                    ),
-                                    SizedBox(width: 12),
-                                    Text(
-                                      quantity.toString(),
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                    SizedBox(width: 12),
-                                    GestureDetector(
-                                      onTap: () => updateQuantity(item, quantity + 1),
-                                      child: Container(
-                                        width: 30,
-                                        height: 30,
-                                        decoration: BoxDecoration(
-                                          color: AppColors.primary,
-                                          borderRadius: BorderRadius.circular(6),
-                                        ),
-                                        child: Icon(
-                                          Icons.add,
-                                          size: 16,
-                                          color: Colors.white,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
-                ),
-
-                // Delivery progress
-                Container(
-                  margin: EdgeInsets.all(16),
-                  padding: EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade50,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Column(
-                    children: [
-                      Text(
-                        'You are \$${(30 - totalAmount).toStringAsFixed(2)} away from free delivery',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      SizedBox(height: 8),
-                      LinearProgressIndicator(
-                        value: totalAmount / 30,
-                        backgroundColor: Colors.grey.shade300,
-                        valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
-                      ),
-                    ],
-                  ),
-                ),
-
-                // Go to Cart button
-                Container(
-                  margin: EdgeInsets.all(16),
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      // Handle checkout
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      padding: EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
                     ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          'Submit Order (\$${totalAmount.toStringAsFixed(2)})',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        SizedBox(width: 8),
-                        Container(
-                          padding: EdgeInsets.all(4),
-                          decoration: BoxDecoration(
-                            color: Colors.red,
-                            shape: BoxShape.circle,
-                          ),
-                          child: Text(
-                            itemQuantities.values.fold(0, (sum, qty) => sum + qty).toString(),
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
+          );
+        },
+      ),
     );
   }
 }
-
-
-// // // Inside cart_page.dart
-
-// onPressed: () async {
-//   // 1. PREPARE DATA
-//   final total = totalAmount;
-//   final items = itemQuantities; // Your map of ProductModel -> Quantity
-
-//   try {
-//     // 2. INSERT PARENT ORDER
-//     // We insert into 'orders' and ask Supabase to return the new row so we get the ID.
-//     final orderResponse = await cloud.from('orders').insert({
-//       'total_amount': total,
-//       'status': 'pending', // or 'new'
-//       'created_at': DateTime.now().toIso8601String(),
-//     }).select().single();
-
-//     final newOrderId = orderResponse['id'];
-
-//     // 3. PREPARE CHILD ITEMS
-//     // We create a list of maps to insert all items in one go (batch insert).
-//     final List<Map<String, dynamic>> orderItemsData = [];
-
-//     items.forEach((product, quantity) {
-//       orderItemsData.add({
-//         'order_id': newOrderId,      // LINKING TO THE PARENT ORDER
-//         'meal_id': product.id,       // Assuming ProductModel has an ID
-//         'quantity': quantity,
-//         'price': double.parse(product.price), // Store price at time of purchase
-//       });
-//     });
-
-//     // 4. INSERT CHILD ITEMS
-//     if (orderItemsData.isNotEmpty) {
-//       await cloud.from('order_items').insert(orderItemsData);
-//     }
-
-//     // 5. SUCCESS!
-//     // Clear cart, show success message, navigate away, etc.
-//     print("Order submitted successfully with ID: $newOrderId");
-
-//   } catch (e) {
-//     print("Error submitting order: $e");
-//   }
-// },
