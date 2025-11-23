@@ -365,3 +365,49 @@ class _CartPageState extends State<CartPage> {
     );
   }
 }
+
+
+// // // Inside cart_page.dart
+
+// onPressed: () async {
+//   // 1. PREPARE DATA
+//   final total = totalAmount;
+//   final items = itemQuantities; // Your map of ProductModel -> Quantity
+
+//   try {
+//     // 2. INSERT PARENT ORDER
+//     // We insert into 'orders' and ask Supabase to return the new row so we get the ID.
+//     final orderResponse = await cloud.from('orders').insert({
+//       'total_amount': total,
+//       'status': 'pending', // or 'new'
+//       'created_at': DateTime.now().toIso8601String(),
+//     }).select().single();
+
+//     final newOrderId = orderResponse['id'];
+
+//     // 3. PREPARE CHILD ITEMS
+//     // We create a list of maps to insert all items in one go (batch insert).
+//     final List<Map<String, dynamic>> orderItemsData = [];
+
+//     items.forEach((product, quantity) {
+//       orderItemsData.add({
+//         'order_id': newOrderId,      // LINKING TO THE PARENT ORDER
+//         'meal_id': product.id,       // Assuming ProductModel has an ID
+//         'quantity': quantity,
+//         'price': double.parse(product.price), // Store price at time of purchase
+//       });
+//     });
+
+//     // 4. INSERT CHILD ITEMS
+//     if (orderItemsData.isNotEmpty) {
+//       await cloud.from('order_items').insert(orderItemsData);
+//     }
+
+//     // 5. SUCCESS!
+//     // Clear cart, show success message, navigate away, etc.
+//     print("Order submitted successfully with ID: $newOrderId");
+
+//   } catch (e) {
+//     print("Error submitting order: $e");
+//   }
+// },
