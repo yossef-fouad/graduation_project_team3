@@ -1,12 +1,13 @@
 import 'package:carousel_slider/carousel_slider.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
-import 'package:order_pad/models/category_model.dart';
-import 'package:order_pad/screens/02_new_order/product_item.dart';
+import 'package:get/get.dart';
+import 'package:order_pad/models/category.dart';
+import 'package:order_pad/screens/02_new_order/category_meals_page.dart';
 import 'package:order_pad/screens/02_new_order/cart_page.dart';
+import 'package:order_pad/services/categories_service.dart';
+import 'package:order_pad/services/cart_controller.dart';
 import 'package:order_pad/widgets/colors.dart';
-
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -16,80 +17,20 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  late Future<List<Category>> _categoriesFuture;
+  final CartController _cartController = Get.put(CartController());
 
-  List<String> items = [
+  @override
+  void initState() {
+    super.initState();
+    _categoriesFuture = CategoriesService.fetchCategories();
+  }
+
+  List<String> banners = [
     "assets/banners/Slider 1.png",
     "assets/banners/Slider 2.png",
     "assets/banners/Slider 3.png",
   ];
-
-  List<CategoryModel> category = [
-    CategoryModel(
-        name: 'Fruits',
-        image: "assets/category/fruits.png",
-    ),
-    CategoryModel(
-      name: 'Milk & Egg',
-      image: "assets/category/egg.png",
-    ),
-    CategoryModel(
-      name: 'Beverages',
-      image: "assets/category/bavergas.png",
-    ),
-    CategoryModel(
-      name: 'Laundry',
-      image: "assets/category/luandry.png",
-    ),
-    CategoryModel(
-      name: 'Vegetables',
-      image: "assets/category/luandry.png",
-    ),
-  ];
-
-  List<ProductModel> product = [
-    ProductModel(
-        name: "Banana",
-        image: "assets/fruits/banana.png",
-        price: "2.45",
-        rate: "4",
-        rateCount: "287",
-    ),
-    ProductModel(
-      name: "Pepper",
-      image: "assets/fruits/papper.png",
-      price: "2.45",
-      rate: "4",
-      rateCount: "287",
-    ),
-    ProductModel(
-      name: "Orange",
-      image: "assets/fruits/orange.png",
-      price: "2.45",
-      rate: "4",
-      rateCount: "287",
-    ),
-    ProductModel(
-      name: "Egg",
-      image: "assets/category/egg.png",
-      price: "2.45",
-      rate: "4",
-      rateCount: "287",
-    ),
-  ];
-
-  List basketList = [];
-
-  void toggleSelection (ProductModel product) {
-    setState(() {
-      if(basketList.contains(product)) {
-        basketList.remove(product);
-      } else {
-        basketList.add(product);
-      }
-    });
-  }
-
-  bool isSelected(ProductModel product) => basketList.contains(product);
 
   @override
   Widget build(BuildContext context) {
@@ -97,259 +38,262 @@ class _HomePageState extends State<HomePage> {
       backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.white,
+        elevation: 0,
         leading: SizedBox.shrink(),
         leadingWidth: 0,
         title: Row(
           children: [
             SvgPicture.asset("assets/icons/motor.svg"),
-            SizedBox(width: 10,),
-            Text("61 Hopper street..",style: TextStyle(fontSize: 19)),
-            SizedBox(width: 10,),
-            Icon(Icons.keyboard_arrow_down_rounded,size: 34),
+            SizedBox(width: 10),
+            Text("61 Hopper street..", style: TextStyle(fontSize: 19)),
+            SizedBox(width: 10),
+            Icon(Icons.keyboard_arrow_down_rounded, size: 34),
             Spacer(),
-            GestureDetector(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => CartPage(
-                      cartItems: basketList.cast<ProductModel>(),
-                      onRemoveItem: (item) {
-                        setState(() {
-                          basketList.remove(item);
-                        });
-                      },
-                      onAddItem: (item) {
-                        setState(() {
-                          if (!basketList.contains(item)) {
-                            basketList.add(item);
-                          }
-                        });
-                      },
-                      onUpdateQuantity: (item, quantity) {
-                        // Handle quantity update if needed
-                      },
+            GetBuilder<CartController>(
+              builder:
+                  (controller) => GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => CartPage()),
+                      );
+                    },
+                    child: Stack(
+                      children: [
+                        SvgPicture.asset("assets/icons/basket.svg"),
+                        if (controller.totalItems > 0)
+                          Positioned(
+                            right: 0,
+                            top: 0,
+                            child: Container(
+                              padding: EdgeInsets.all(4),
+                              decoration: BoxDecoration(
+                                color: AppColors.secondary,
+                                shape: BoxShape.circle,
+                              ),
+                              constraints: BoxConstraints(
+                                minWidth: 18,
+                                minHeight: 18,
+                              ),
+                              child: Text(
+                                controller.totalItems.toString(),
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
                   ),
-                );
-              },
-              child: Stack(
-                children: [
-                  SvgPicture.asset("assets/icons/basket.svg"),
-                  if (basketList.isNotEmpty)
-                    Positioned(
-                      right: 0,
-                      top: 0,
-                      child: Container(
-                        padding: EdgeInsets.all(2),
-                        decoration: BoxDecoration(
-                          color: Colors.red,
-                          shape: BoxShape.circle,
-                        ),
-                        constraints: BoxConstraints(
-                          minWidth: 16,
-                          minHeight: 16,
-                        ),
-                        child: Text(
-                          basketList.length.toString(),
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                    ),
-                ],
-              ),
             ),
           ],
         ),
       ),
-
       body: SingleChildScrollView(
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            /// banner
+            // Banner Carousel
             CarouselSlider.builder(
-              itemCount: items.length,
-              itemBuilder: (BuildContext context, int itemIndex, int pageViewIndex) => Image.asset(items[itemIndex]),
+              itemCount: banners.length,
+              itemBuilder:
+                  (BuildContext context, int itemIndex, int pageViewIndex) =>
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Image.asset(
+                          banners[itemIndex],
+                          fit: BoxFit.cover,
+                        ),
+                      ),
               options: CarouselOptions(
                 height: 170,
-                aspectRatio: 1,
-                viewportFraction: 0.6,
+                aspectRatio: 16 / 9,
+                viewportFraction: 0.85,
                 autoPlay: true,
-                autoPlayInterval: Duration(seconds: 3),
-                autoPlayAnimationDuration: Duration(seconds: 3),
-                autoPlayCurve: Curves.linear,
+                autoPlayInterval: Duration(seconds: 4),
+                autoPlayAnimationDuration: Duration(milliseconds: 800),
+                autoPlayCurve: Curves.fastOutSlowIn,
                 enlargeCenterPage: true,
+                enlargeFactor: 0.2,
               ),
             ),
-        
-            /// category
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: List.generate(category.length, (index) {
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
+
+            SizedBox(height: 24),
+
+            // Categories Section
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: Text(
+                'Categories',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+            ),
+
+            SizedBox(height: 16),
+
+            // Categories List
+            FutureBuilder<List<Category>>(
+              future: _categoriesFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return Container(
+                    height: 120,
+                    alignment: Alignment.center,
+                    child: CircularProgressIndicator(color: AppColors.primary),
+                  );
+                }
+
+                if (snapshot.hasError) {
+                  return Container(
+                    height: 120,
+                    alignment: Alignment.center,
                     child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Container(
-                          decoration: BoxDecoration(
-                            color: Colors.grey.shade100,
-                            shape: BoxShape.circle
-                          ),
-                          width: 70,
-                          height: 70,
-                          child: Padding(
-                            padding: const EdgeInsets.all(15.0),
-                            child: Image.asset(category[index].image,width: 50),
-                          ),
+                        Icon(Icons.error_outline, color: Colors.red, size: 40),
+                        SizedBox(height: 8),
+                        Text(
+                          'Error loading categories',
+                          style: TextStyle(color: Colors.red),
                         ),
-                        SizedBox(height: 10),
-                        Text(category[index].name,style: TextStyle(fontWeight: FontWeight.bold,fontSize: 10)),
                       ],
                     ),
                   );
-                }),
-              ),
-            ),
-        
-            SizedBox(height: 20),
-        
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text("Fruits",style: TextStyle(fontWeight: FontWeight.bold,fontSize: 15)),
-                  Text("See all",style: TextStyle(fontWeight: FontWeight.bold,fontSize: 14,color: AppColors.primary)),
-                ],
-              ),
-            ),
-        
-            SizedBox(height: 20),
-        
-            /// products
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                child: Row(
-                  children: List.generate(
-                      product.length,
-                          (index) {
-                    final item = product[index];
-                    return ProductItem(
-                      image: item.image,
-                      name: item.name,
-                      rate: item.rate,
-                      rateCount: item.rateCount,
-                      price: item.price,
-                      onTap: () => toggleSelection(item),
-                      icon: isSelected(item) ? Icon(CupertinoIcons.delete, color: Colors.red.shade900,size: 15)  : Icon(Icons.add),
-                    );
-                  }),
-                ),
-              ),
-            ),
+                }
 
-            SizedBox(height: 20),
+                final categories = snapshot.data ?? [];
 
-            /// cart widget - only show when items are selected
-            if (basketList.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 15.0),
-                child: GestureDetector(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => CartPage(
-                          cartItems: basketList.cast<ProductModel>(),
-                          onRemoveItem: (item) {
-                            setState(() {
-                              basketList.remove(item);
-                            });
-                          },
-                          onAddItem: (item) {
-                            setState(() {
-                              if (!basketList.contains(item)) {
-                                basketList.add(item);
-                              }
-                            });
-                          },
-                          onUpdateQuantity: (item, quantity) {
-                            // Handle quantity update if needed
-                          },
-                        ),
-                      ),
-                    );
-                  },
-                  child: Container(
-                    width: double.infinity,
-                    height: 77,
-                    decoration: BoxDecoration(
-                      color: AppColors.primary,
-                      borderRadius: BorderRadius.circular(7),
+                if (categories.isEmpty) {
+                  return Container(
+                    height: 120,
+                    alignment: Alignment.center,
+                    child: Text(
+                      'No categories available',
+                      style: TextStyle(color: Colors.grey, fontSize: 16),
                     ),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                      child: Row(
-                        children: [
-                          SizedBox(
-                            width: 190,
-                            child: ListView.builder(
-                                itemCount: basketList.length,
-                                scrollDirection: Axis.horizontal,
-                                itemBuilder: (context , index) {
-                                  return Padding(
-                                    padding: const EdgeInsets.only(left: 4.0),
-                                    child: Container(
-                                      width: 50,
-                                      height: 50,
-                                      decoration: BoxDecoration(
-                                        color: Colors.white,
-                                        shape: BoxShape.circle,
-                                      ),
-                                      child: Padding(
-                                        padding: const EdgeInsets.all(8.0),
-                                        child: Image.asset(basketList[index].image),
-                                      ),
+                  );
+                }
+
+                return SizedBox(
+                  height: 120,
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    padding: EdgeInsets.symmetric(horizontal: 12),
+                    itemCount: categories.length,
+                    itemBuilder: (context, index) {
+                      final category = categories[index];
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 6.0),
+                        child: GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder:
+                                    (context) =>
+                                        CategoryMealsPage(category: category),
+                              ),
+                            );
+                          },
+                          child: Container(
+                            width: 90,
+                            child: Column(
+                              children: [
+                                Container(
+                                  width: 70,
+                                  height: 70,
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      colors: [
+                                        AppColors.primary.withOpacity(0.8),
+                                        AppColors.secondary.withOpacity(0.8),
+                                      ],
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
                                     ),
-                                  );
-                                }
+                                    shape: BoxShape.circle,
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: AppColors.primary.withOpacity(
+                                          0.3,
+                                        ),
+                                        blurRadius: 8,
+                                        offset: Offset(0, 4),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Center(
+                                    child: Icon(
+                                      Icons.restaurant_menu,
+                                      size: 32,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                                SizedBox(height: 8),
+                                Text(
+                                  category.name,
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 12,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
                             ),
                           ),
-                          Container(
-                            width: 2,
-                            height: 40,
-                            color: Colors.white,
-                          ),
-                          SizedBox(width: 10),
-                          Text("View Basket",style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 15
-                          )),
-                          SizedBox(width: 10),
-                          Badge(
-                              backgroundColor: Colors.red,
-                              label: Text( basketList.length.toString() ,style: TextStyle(fontSize: 13)),
-                              largeSize: 13,
-                              child: SvgPicture.asset("assets/icons/basket.svg",color: Colors.white),
-                          ),
-                          SizedBox(width: 10),
-                        ],
+                        ),
+                      );
+                    },
+                  ),
+                );
+              },
+            ),
+
+            SizedBox(height: 24),
+
+            // Welcome Message
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: Container(
+                padding: EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      AppColors.primary.withOpacity(0.1),
+                      AppColors.secondary.withOpacity(0.1),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Welcome to Order Pad! 👋',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.primary,
                       ),
                     ),
-                  ),
+                    SizedBox(height: 8),
+                    Text(
+                      'Browse our categories and add your favorite meals to the cart.',
+                      style: TextStyle(fontSize: 14, color: Colors.grey[700]),
+                    ),
+                  ],
                 ),
               ),
-            
-            SizedBox(height: 60),
+            ),
+
+            SizedBox(height: 40),
           ],
         ),
       ),
