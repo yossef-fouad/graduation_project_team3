@@ -1,212 +1,30 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:order_pad/main.dart';
 import 'package:order_pad/models/category.dart';
 import 'package:order_pad/models/meal_item.dart';
-import 'package:order_pad/widgets/meal_card.dart';
+import 'package:order_pad/models/ingredient.dart';
 import 'package:order_pad/widgets/category_card.dart';
-
-class MenuController extends GetxController {
-  final RxList<Category> categories = <Category>[].obs;
-  final RxList<MealItem> meals = <MealItem>[].obs;
-  final RxBool categoriesLoading = false.obs;
-  final RxBool mealsLoading = false.obs;
-  final RxBool savingCategory = false.obs;
-  final RxBool savingMeal = false.obs;
-  final RxString deletingCategoryId = ''.obs;
-  final RxString deletingMealId = ''.obs;
-  final RxString updatingMealId = ''.obs;
-  final RxString selectedCategoryId = ''.obs;
-  final RxBool loadingMore = false.obs;
-  final RxBool hasMore = true.obs;
-  final int pageSize = 10;
-  int mealOffset = 0;
-
-  @override
-  void onInit() {
-    super.onInit();
-    fetchCategories();
-    fetchMeals(reset: true);
-  }
-
-  Future<void> fetchCategories() async {
-    categoriesLoading.value = true;
-    try {
-      final res = await cloud.from('categories').select().order('name');
-      categories.assignAll((res as List).map((e) => Category.fromMap(e as Map<String, dynamic>)).toList());
-    } finally {
-      categoriesLoading.value = false;
-    }
-  }
-
-  Future<void> fetchMeals({bool reset = false}) async {
-    mealsLoading.value = true;
-    if (reset) {
-      mealOffset = 0;
-      meals.clear();
-      hasMore.value = true;
-    }
-    try {
-      final from = mealOffset;
-      final to = mealOffset + pageSize - 1;
-      final base = cloud.from('meals').select();
-      final filtered = selectedCategoryId.value.isNotEmpty
-          ? base.eq('category_id', selectedCategoryId.value)
-          : base;
-      final res = await filtered.order('name').range(from, to);
-      final fetched = (res as List).map((e) => MealItem.fromMap(e as Map<String, dynamic>)).toList();
-      meals.addAll(fetched);
-      mealOffset += fetched.length;
-      hasMore.value = fetched.length == pageSize;
-    } finally {
-      mealsLoading.value = false;
-    }
-  }
-
-  Future<void> loadMoreMeals() async {
-    if (!hasMore.value || loadingMore.value) return;
-    loadingMore.value = true;
-    final from = mealOffset;
-    final to = mealOffset + pageSize - 1;
-    final base = cloud.from('meals').select();
-    final filtered = selectedCategoryId.value.isNotEmpty
-        ? base.eq('category_id', selectedCategoryId.value)
-        : base;
-    final res = await filtered.order('name').range(from, to);
-    final fetched = (res as List).map((e) => MealItem.fromMap(e as Map<String, dynamic>)).toList();
-    meals.addAll(fetched);
-    mealOffset += fetched.length;
-    hasMore.value = fetched.length == pageSize;
-    loadingMore.value = false;
-  }
-
-  Future<void> addCategory(String name) async {
-    if (name.isEmpty) return;
-    savingCategory.value = true;
-    try {
-      await cloud.from('categories').insert({'name': name});
-      await fetchCategories();
-    } finally {
-      savingCategory.value = false;
-    }
-  }
-
-  Future<void> updateCategory(String id, String name) async {
-    savingCategory.value = true;
-    try {
-      await cloud.from('categories').update({'name': name}).eq('id', id);
-      await fetchCategories();
-    } finally {
-      savingCategory.value = false;
-    }
-  }
-
-  Future<void> deleteCategory(String id) async {
-    deletingCategoryId.value = id;
-    try {
-      await cloud.from('categories').delete().eq('id', id);
-      if (selectedCategoryId.value == id) selectedCategoryId.value = '';
-      await fetchCategories();
-      await fetchMeals();
-    } finally {
-      deletingCategoryId.value = '';
-    }
-  }
-
-  Future<void> addMeal({
-    required String name,
-    required double price,
-    String? description,
-    String? imageUrl,
-    String? categoryId,
-  }) async {
-    savingMeal.value = true;
-    try {
-      await cloud.from('meals').insert({
-        'name': name,
-        'price': price,
-        'description': description,
-        'image_url': imageUrl,
-        'category_id': categoryId,
-        'is_available': true,
-      });
-      await fetchMeals(reset: true);
-    } finally {
-      savingMeal.value = false;
-    }
-  }
-
-  Future<void> updateMeal(
-    MealItem meal, {
-    String? name,
-    double? price,
-    String? description,
-    String? imageUrl,
-    String? categoryId,
-    bool? isAvailable,
-    bool refresh = true,
-  }) async {
-    final update = <String, dynamic>{};
-    if (name != null) update['name'] = name;
-    if (price != null) update['price'] = price;
-    if (description != null) update['description'] = description;
-    if (imageUrl != null) update['image_url'] = imageUrl;
-    if (categoryId != null) update['category_id'] = categoryId;
-    if (isAvailable != null) update['is_available'] = isAvailable;
-    if (update.isEmpty) return;
-    final trackInline = !refresh;
-    if (trackInline) updatingMealId.value = meal.id;
-    try {
-      await cloud.from('meals').update(update).eq('id', meal.id);
-      if (refresh) {
-        await fetchMeals(reset: true);
-      } else {
-        final idx = meals.indexWhere((x) => x.id == meal.id);
-        if (idx != -1) {
-          meals[idx] = meals[idx].copyWith(
-            name: name,
-            price: price,
-            description: description,
-            imageUrl: imageUrl,
-            categoryId: categoryId,
-            isAvailable: isAvailable,
-          );
-        }
-      }
-    } finally {
-      if (trackInline) updatingMealId.value = '';
-    }
-  }
-
-  Future<void> deleteMeal(String id) async {
-    deletingMealId.value = id;
-    try {
-      await cloud.from('meals').delete().eq('id', id);
-      await fetchMeals(reset: true);
-    } finally {
-      deletingMealId.value = '';
-    }
-  }
-
-  void setCategoryFilter(String? id) {
-    selectedCategoryId.value = id ?? '';
-    fetchMeals(reset: true);
-  }
-}
+import 'package:order_pad/widgets/meal_card.dart';
+import 'package:order_pad/screens/05_menu_management/menu_controller.dart';
 
 class MenuManagementScreen extends StatelessWidget {
   const MenuManagementScreen({super.key});
   @override
   Widget build(BuildContext context) {
-    final c = Get.put(MenuController());
+    final c = Get.put(MenuManagementController());
     return DefaultTabController(
-      length: 2,
+      length: 3,
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Menu Management'),
-          bottom: const TabBar(tabs: [Tab(text: 'Categories'), Tab(text: 'Meals')]),
+          bottom: const TabBar(tabs: [
+            Tab(text: 'Categories'),
+            Tab(text: 'Meals'),
+            Tab(text: 'Ingredients'),
+          ]),
         ),
         body: TabBarView(children: [
+          // Categories Tab
           Column(children: [
             Padding(
               padding: const EdgeInsets.all(12),
@@ -246,6 +64,7 @@ class MenuManagementScreen extends StatelessWidget {
               }),
             ),
           ]),
+          // Meals Tab
           Column(children: [
             Padding(
               padding: const EdgeInsets.all(12),
@@ -311,12 +130,65 @@ class MenuManagementScreen extends StatelessWidget {
                   )
                 : const SizedBox.shrink()),
           ]),
+          // Ingredients Tab
+          Column(children: [
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Obx(() => Row(children: [
+                    ElevatedButton(
+                      onPressed: c.savingIngredient.value ? null : () => _showAddIngredientDialog(context, c),
+                      child: c.savingIngredient.value
+                          ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                          : const Text('Add Ingredient'),
+                    ),
+                  ])),
+            ),
+            Expanded(
+              child: Obx(() {
+                if (c.ingredientsLoading.value && c.ingredients.isEmpty) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (c.ingredients.isEmpty) {
+                  return const Center(child: Text('No ingredients yet'));
+                }
+                return ListView.separated(
+                  itemCount: c.ingredients.length,
+                  separatorBuilder: (_, __) => const Divider(height: 1),
+                  itemBuilder: (_, i) {
+                    final ing = c.ingredients[i];
+                    final deleting = c.deletingIngredientId.value == ing.id;
+                    return ListTile(
+                      title: Text(ing.name),
+                      subtitle: Text('Stock: ${ing.stockLevel} ${ing.unit}'),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (deleting)
+                            const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                          else ...[
+                            IconButton(
+                              icon: const Icon(Icons.edit, color: Colors.blue),
+                              onPressed: () => _showEditIngredientDialog(context, c, ing),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.delete, color: Colors.red),
+                              onPressed: () => _confirmDeleteIngredient(context, c, ing),
+                            ),
+                          ],
+                        ],
+                      ),
+                    );
+                  },
+                );
+              }),
+            ),
+          ]),
         ]),
       ),
     );
   }
 
-  void _showAddCategoryDialog(BuildContext context, MenuController c) {
+  void _showAddCategoryDialog(BuildContext context, MenuManagementController c) {
     final nameCtl = TextEditingController();
     showDialog(
       context: context,
@@ -341,7 +213,7 @@ class MenuManagementScreen extends StatelessWidget {
     );
   }
 
-  void _showEditCategoryDialog(BuildContext context, MenuController c, Category cat) {
+  void _showEditCategoryDialog(BuildContext context, MenuManagementController c, Category cat) {
     final nameCtl = TextEditingController(text: cat.name);
     showDialog(
       context: context,
@@ -366,12 +238,78 @@ class MenuManagementScreen extends StatelessWidget {
     );
   }
 
-  void _showAddMealDialog(BuildContext context, MenuController c) {
+  void _showAddIngredientDialog(BuildContext context, MenuManagementController c) {
+    final nameCtl = TextEditingController();
+    final stockCtl = TextEditingController();
+    final unitCtl = TextEditingController(text: 'pcs');
+    showDialog(
+      context: context,
+      builder: (_) => Obx(() => AlertDialog(
+            title: const Text('Add Ingredient'),
+            content: Column(mainAxisSize: MainAxisSize.min, children: [
+              TextField(controller: nameCtl, decoration: const InputDecoration(labelText: 'Name')),
+              TextField(controller: stockCtl, decoration: const InputDecoration(labelText: 'Stock Level'), keyboardType: TextInputType.numberWithOptions(decimal: true)),
+              TextField(controller: unitCtl, decoration: const InputDecoration(labelText: 'Unit (e.g. kg, pcs)')),
+            ]),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+              ElevatedButton(
+                onPressed: c.savingIngredient.value
+                    ? null
+                    : () async {
+                        final stock = double.tryParse(stockCtl.text.trim()) ?? 0;
+                        await c.addIngredient(nameCtl.text.trim(), stock, unitCtl.text.trim());
+                        if (context.mounted) Navigator.pop(context);
+                      },
+                child: c.savingIngredient.value
+                    ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                    : const Text('Save'),
+              ),
+            ],
+          )),
+    );
+  }
+
+  void _showEditIngredientDialog(BuildContext context, MenuManagementController c, Ingredient ing) {
+    final nameCtl = TextEditingController(text: ing.name);
+    final stockCtl = TextEditingController(text: ing.stockLevel.toString());
+    final unitCtl = TextEditingController(text: ing.unit);
+    showDialog(
+      context: context,
+      builder: (_) => Obx(() => AlertDialog(
+            title: const Text('Edit Ingredient'),
+            content: Column(mainAxisSize: MainAxisSize.min, children: [
+              TextField(controller: nameCtl, decoration: const InputDecoration(labelText: 'Name')),
+              TextField(controller: stockCtl, decoration: const InputDecoration(labelText: 'Stock Level'), keyboardType: TextInputType.numberWithOptions(decimal: true)),
+              TextField(controller: unitCtl, decoration: const InputDecoration(labelText: 'Unit')),
+            ]),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+              ElevatedButton(
+                onPressed: c.savingIngredient.value
+                    ? null
+                    : () async {
+                        final stock = double.tryParse(stockCtl.text.trim()) ?? 0;
+                        await c.updateIngredient(ing.id, nameCtl.text.trim(), stock, unitCtl.text.trim());
+                        if (context.mounted) Navigator.pop(context);
+                      },
+                child: c.savingIngredient.value
+                    ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                    : const Text('Save'),
+              ),
+            ],
+          )),
+    );
+  }
+
+  void _showAddMealDialog(BuildContext context, MenuManagementController c) {
     final nameCtl = TextEditingController();
     final priceCtl = TextEditingController();
     final descCtl = TextEditingController();
     final imageCtl = TextEditingController();
     String selectedCat = c.selectedCategoryId.value.isNotEmpty ? c.selectedCategoryId.value : '';
+    final selectedIngredients = <String>{};
+
     showDialog(
       context: context,
       builder: (_) => StatefulBuilder(builder: (ctx, setState) {
@@ -392,6 +330,28 @@ class MenuManagementScreen extends StatelessWidget {
                 onChanged: (v) { setState(() { selectedCat = v ?? ''; }); },
                 decoration: const InputDecoration(labelText: 'Category'),
               ),
+              const SizedBox(height: 16),
+              const Align(alignment: Alignment.centerLeft, child: Text('Ingredients:', style: TextStyle(fontWeight: FontWeight.bold))),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                children: c.ingredients.map((ing) {
+                  final isSelected = selectedIngredients.contains(ing.id);
+                  return FilterChip(
+                    label: Text(ing.name),
+                    selected: isSelected,
+                    onSelected: (v) {
+                      setState(() {
+                        if (v) {
+                          selectedIngredients.add(ing.id);
+                        } else {
+                          selectedIngredients.remove(ing.id);
+                        }
+                      });
+                    },
+                  );
+                }).toList(),
+              ),
             ]),
           ),
           actions: [
@@ -407,6 +367,7 @@ class MenuManagementScreen extends StatelessWidget {
                             description: descCtl.text.trim().isEmpty ? null : descCtl.text.trim(),
                             imageUrl: imageCtl.text.trim().isEmpty ? null : imageCtl.text.trim(),
                             categoryId: selectedCat.isEmpty ? null : selectedCat,
+                            ingredientIds: selectedIngredients.toList(),
                           );
                           if (context.mounted) Navigator.pop(context);
                         },
@@ -420,15 +381,30 @@ class MenuManagementScreen extends StatelessWidget {
     );
   }
 
-  void _showEditMealDialog(BuildContext context, MenuController c, MealItem m) {
+  void _showEditMealDialog(BuildContext context, MenuManagementController c, MealItem m) {
     final nameCtl = TextEditingController(text: m.name);
     final priceCtl = TextEditingController(text: m.price.toStringAsFixed(2));
     final descCtl = TextEditingController(text: m.description ?? '');
     final imageCtl = TextEditingController(text: m.imageUrl ?? '');
     String selectedCat = m.categoryId ?? '';
+    
+    final selectedIngredients = <String>{};
+    bool ingredientsLoaded = false;
+
     showDialog(
       context: context,
       builder: (_) => StatefulBuilder(builder: (ctx, setState) {
+        if (!ingredientsLoaded) {
+          c.fetchMealIngredients(m.id).then((list) {
+             if (ctx.mounted) {
+               setState(() {
+                 selectedIngredients.addAll(list.map((e) => e.ingredientId));
+                 ingredientsLoaded = true;
+               });
+             }
+           });
+        }
+
         return AlertDialog(
           title: const Text('Edit Meal'),
           content: SingleChildScrollView(
@@ -446,6 +422,31 @@ class MenuManagementScreen extends StatelessWidget {
                 onChanged: (v) { setState(() { selectedCat = v ?? ''; }); },
                 decoration: const InputDecoration(labelText: 'Category'),
               ),
+              const SizedBox(height: 16),
+              const Align(alignment: Alignment.centerLeft, child: Text('Ingredients:', style: TextStyle(fontWeight: FontWeight.bold))),
+              const SizedBox(height: 8),
+              if (!ingredientsLoaded)
+                const Center(child: CircularProgressIndicator())
+              else
+                Wrap(
+                  spacing: 8,
+                  children: c.ingredients.map((ing) {
+                    final isSelected = selectedIngredients.contains(ing.id);
+                    return FilterChip(
+                      label: Text(ing.name),
+                      selected: isSelected,
+                      onSelected: (v) {
+                        setState(() {
+                          if (v) {
+                            selectedIngredients.add(ing.id);
+                          } else {
+                            selectedIngredients.remove(ing.id);
+                          }
+                        });
+                      },
+                    );
+                  }).toList(),
+                ),
             ]),
           ),
           actions: [
@@ -459,6 +460,7 @@ class MenuManagementScreen extends StatelessWidget {
                 description: descCtl.text.trim(),
                 imageUrl: imageCtl.text.trim(),
                 categoryId: selectedCat.isEmpty ? null : selectedCat,
+                ingredientIds: selectedIngredients.toList(),
               );
               Navigator.pop(context);
             }, child: const Text('Save')),
@@ -467,7 +469,8 @@ class MenuManagementScreen extends StatelessWidget {
       }),
     );
   }
-  Future<void> _confirmDeleteCategory(BuildContext context, MenuController c, Category cat) async {
+
+  Future<void> _confirmDeleteCategory(BuildContext context, MenuManagementController c, Category cat) async {
     final confirmed = await _showDeleteConfirmation(
       context,
       title: 'Delete Category',
@@ -476,13 +479,22 @@ class MenuManagementScreen extends StatelessWidget {
     if (confirmed) await c.deleteCategory(cat.id);
   }
 
-  Future<void> _confirmDeleteMeal(BuildContext context, MenuController c, MealItem meal) async {
+  Future<void> _confirmDeleteMeal(BuildContext context, MenuManagementController c, MealItem meal) async {
     final confirmed = await _showDeleteConfirmation(
       context,
       title: 'Delete Meal',
       message: 'Are you sure you want to delete "${meal.name}"?',
     );
     if (confirmed) await c.deleteMeal(meal.id);
+  }
+
+  Future<void> _confirmDeleteIngredient(BuildContext context, MenuManagementController c, Ingredient ing) async {
+    final confirmed = await _showDeleteConfirmation(
+      context,
+      title: 'Delete Ingredient',
+      message: 'Are you sure you want to delete "${ing.name}"?',
+    );
+    if (confirmed) await c.deleteIngredient(ing.id);
   }
 
   Future<bool> _showDeleteConfirmation(
@@ -509,10 +521,8 @@ class MenuManagementScreen extends StatelessWidget {
   }
 }
 
- 
-
 class _CategoryFilter extends StatelessWidget {
-  final MenuController c;
+  final MenuManagementController c;
   const _CategoryFilter({required this.c});
   @override
   Widget build(BuildContext context) {
