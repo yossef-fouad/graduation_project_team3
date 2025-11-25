@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:order_pad/screens/02_new_order/main_navigation.dart';
+import 'package:order_pad/screens/01_dashboard/dashboard_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 //test
 Future<void> main() async {
@@ -24,8 +24,36 @@ class MyApp extends StatelessWidget {
           tertiary: const Color(0xFF9FCCD5),
           error: const Color(0xFFD32F2F),
         ),
+        pageTransitionsTheme: const PageTransitionsTheme(
+          builders: {
+            TargetPlatform.android: CustomPageTransitionBuilder(),
+            TargetPlatform.iOS: CustomPageTransitionBuilder(),
+            TargetPlatform.windows: CustomPageTransitionBuilder(),
+          },
+        ),
       ),
-      home: MainNavigation(),
+      home: DashboardScreen(),
+    );
+  }
+}
+
+class CustomPageTransitionBuilder extends PageTransitionsBuilder {
+  const CustomPageTransitionBuilder();
+  @override
+  Widget buildTransitions<T>(
+    PageRoute<T> route,
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) {
+    const begin = Offset(1.0, 0.0);
+    const end = Offset.zero;
+    const curve = Curves.easeInOutCubic;
+    var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+    return SlideTransition(
+      position: animation.drive(tween),
+      child: FadeTransition(opacity: animation, child: child),
     );
   }
 }

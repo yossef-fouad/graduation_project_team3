@@ -188,9 +188,28 @@ class MenuManagementScreen extends StatelessWidget {
     );
   }
 
+  Future<T?> _showAnimatedDialog<T>({
+    required BuildContext context,
+    required WidgetBuilder builder,
+  }) {
+    return showGeneralDialog<T>(
+      context: context,
+      barrierDismissible: true,
+      barrierLabel: '',
+      pageBuilder: (ctx, a1, a2) => builder(ctx),
+      transitionBuilder: (ctx, a1, a2, child) {
+        return ScaleTransition(
+          scale: CurvedAnimation(parent: a1, curve: Curves.easeOutBack),
+          child: FadeTransition(opacity: a1, child: child),
+        );
+      },
+      transitionDuration: const Duration(milliseconds: 500),
+    );
+  }
+
   void _showAddCategoryDialog(BuildContext context, MenuManagementController c) {
     final nameCtl = TextEditingController();
-    showDialog(
+    _showAnimatedDialog(
       context: context,
       builder: (_) => Obx(() => AlertDialog(
             title: const Text('Add Category'),
@@ -215,7 +234,7 @@ class MenuManagementScreen extends StatelessWidget {
 
   void _showEditCategoryDialog(BuildContext context, MenuManagementController c, Category cat) {
     final nameCtl = TextEditingController(text: cat.name);
-    showDialog(
+    _showAnimatedDialog(
       context: context,
       builder: (_) => Obx(() => AlertDialog(
             title: const Text('Edit Category'),
@@ -242,7 +261,7 @@ class MenuManagementScreen extends StatelessWidget {
     final nameCtl = TextEditingController();
     final stockCtl = TextEditingController();
     final unitCtl = TextEditingController(text: 'pcs');
-    showDialog(
+    _showAnimatedDialog(
       context: context,
       builder: (_) => Obx(() => AlertDialog(
             title: const Text('Add Ingredient'),
@@ -274,7 +293,7 @@ class MenuManagementScreen extends StatelessWidget {
     final nameCtl = TextEditingController(text: ing.name);
     final stockCtl = TextEditingController(text: ing.stockLevel.toString());
     final unitCtl = TextEditingController(text: ing.unit);
-    showDialog(
+    _showAnimatedDialog(
       context: context,
       builder: (_) => Obx(() => AlertDialog(
             title: const Text('Edit Ingredient'),
@@ -310,7 +329,7 @@ class MenuManagementScreen extends StatelessWidget {
     String selectedCat = c.selectedCategoryId.value.isNotEmpty ? c.selectedCategoryId.value : '';
     final selectedIngredients = <String>{};
 
-    showDialog(
+    _showAnimatedDialog(
       context: context,
       builder: (_) => StatefulBuilder(builder: (ctx, setState) {
         return AlertDialog(
@@ -391,7 +410,7 @@ class MenuManagementScreen extends StatelessWidget {
     final selectedIngredients = <String>{};
     bool ingredientsLoaded = false;
 
-    showDialog(
+    _showAnimatedDialog(
       context: context,
       builder: (_) => StatefulBuilder(builder: (ctx, setState) {
         if (!ingredientsLoaded) {
@@ -409,6 +428,23 @@ class MenuManagementScreen extends StatelessWidget {
           title: const Text('Edit Meal'),
           content: SingleChildScrollView(
             child: Column(mainAxisSize: MainAxisSize.min, children: [
+              if (m.imageUrl != null && m.imageUrl!.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: Hero(
+                    tag: 'meal_${m.imageUrl}',
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: Image.network(
+                        m.imageUrl!,
+                        height: 120,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                      ),
+                    ),
+                  ),
+                ),
               TextField(controller: nameCtl, decoration: const InputDecoration(labelText: 'Name')),
               TextField(controller: priceCtl, decoration: const InputDecoration(labelText: 'Price'), keyboardType: TextInputType.numberWithOptions(decimal: true)),
               TextField(controller: descCtl, decoration: const InputDecoration(labelText: 'Description')),
@@ -502,7 +538,7 @@ class MenuManagementScreen extends StatelessWidget {
     required String title,
     required String message,
   }) async {
-    final result = await showDialog<bool>(
+    final result = await _showAnimatedDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
         title: Text(title),

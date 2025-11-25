@@ -26,7 +26,7 @@ class MealCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final description = (meal.description ?? '').trim();
-    final fadedBodyColor = theme.textTheme.bodySmall?.color?.withValues(alpha: 0.8);
+    final fadedBodyColor = theme.textTheme.bodySmall?.color?.withValues(alpha:0.8);
     return Card(
       elevation: 1,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -82,13 +82,13 @@ class MealCard extends StatelessWidget {
                     children: [
                       _InfoChip(
                         label: categoryName,
-                        backgroundColor: accentColor.withValues(alpha: 0.15),
+                        backgroundColor: accentColor.withValues(alpha:0.15),
                         textColor: accentColor,
                         icon: Icons.category,
                       ),
                       _InfoChip(
                         label: meal.isAvailable ? 'Available' : 'Hidden',
-                        backgroundColor: (meal.isAvailable ? Colors.green : Colors.red).withValues(alpha: 0.15),
+                        backgroundColor: (meal.isAvailable ? Colors.green : Colors.red).withValues(alpha:0.15),
                         textColor: meal.isAvailable ? Colors.green.shade700 : Colors.red.shade700,
                         icon: meal.isAvailable ? Icons.check_circle : Icons.remove_circle,
                       ),
@@ -132,23 +132,26 @@ class _Avatar extends StatelessWidget {
     return Stack(
       clipBehavior: Clip.none,
       children: [
-        Container(
-          width: 64,
-          height: 64,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: accentColor.withValues(alpha: 0.4), width: 2),
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(14),
-            child: url == null || url!.isEmpty
-                ? const _PlaceholderThumb()
-                : CachedNetworkImage(
-                    imageUrl: url!,
-                    fit: BoxFit.cover,
-                    placeholder: (_, __) => const _PlaceholderThumb(),
-                    errorWidget: (_, __, ___) => const _PlaceholderThumb(),
-                  ),
+        Hero(
+          tag: 'meal_${url ?? 'placeholder'}',
+          child: Container(
+            width: 64,
+            height: 64,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: accentColor.withValues(alpha:0.4), width: 2),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(14),
+              child: url == null || url!.isEmpty
+                  ? const _PlaceholderThumb()
+                  : CachedNetworkImage(
+                      imageUrl: url!,
+                      fit: BoxFit.cover,
+                      placeholder: (_, __) => const _PlaceholderThumb(),
+                      errorWidget: (_, __, ___) => const _PlaceholderThumb(),
+                    ),
+            ),
           ),
         ),
         Positioned(

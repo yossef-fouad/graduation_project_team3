@@ -15,7 +15,7 @@ class Order {
     return Order(
       id: map['id'] as String,
       createdAt: DateTime.parse(map['created_at'] as String),
-      totalAmount: (map['total_amount'] as num).toDouble(),
+      totalAmount: (map['total_price'] as num).toDouble(),
       status: map['status'] as String,
     );
   }
@@ -42,7 +42,7 @@ class OrderItem {
       orderId: map['order_id'] as String,
       mealId: map['meal_id'] as String,
       quantity: (map['quantity'] as num).toInt(),
-      price: (map['price'] as num).toDouble(),
+      price: (map['price_at_order'] as num).toDouble(),
     );
   }
 }
