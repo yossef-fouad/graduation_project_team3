@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:order_pad/screens/01_dashboard/dashboard_controller.dart';
+import 'package:order_pad/screens/02_new_order/home_page.dart';
 import 'package:order_pad/screens/03_active_orders/active_orders_screen.dart';
 import 'package:order_pad/widgets/colors.dart';
 
@@ -54,7 +55,7 @@ class DashboardScreen extends StatelessWidget {
               onTap: () {
                 Get.back();
                 // Navigate to New Order
-                 Get.toNamed('/new_order'); // Assuming route or just use class
+                 Get.to(HomePage()); // Assuming route or just use class
               },
             ),
              ListTile(
