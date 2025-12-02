@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:order_pad/screens/01_dashboard/dashboard_screen.dart';
+import 'package:order_pad/screens/02_new_order/cart_page.dart';
+import 'package:order_pad/screens/02_new_order/category_meals_page.dart';
+import 'package:order_pad/screens/02_new_order/home_page.dart';
+import 'package:order_pad/screens/02_new_order/new_order_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 //test
 Future<void> main() async {
@@ -17,6 +21,9 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
+      debugShowCheckedModeBanner: false,
+      defaultTransition: Transition.native,
+      transitionDuration: const Duration(milliseconds: 500),
       theme: ThemeData(
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF056B4C)).copyWith(
@@ -47,13 +54,15 @@ class CustomPageTransitionBuilder extends PageTransitionsBuilder {
     Animation<double> secondaryAnimation,
     Widget child,
   ) {
-    const begin = Offset(1.0, 0.0);
-    const end = Offset.zero;
-    const curve = Curves.easeInOutCubic;
-    var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
     return SlideTransition(
-      position: animation.drive(tween),
-      child: FadeTransition(opacity: animation, child: child),
+      position: Tween<Offset>(
+        begin: const Offset(1.0, 0.0),
+        end: Offset.zero,
+      ).animate(CurvedAnimation(
+        parent: animation,
+        curve: Curves.easeOutQuart,
+      )),
+      child: child,
     );
   }
 }

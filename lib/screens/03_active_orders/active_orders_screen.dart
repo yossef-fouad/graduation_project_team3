@@ -15,10 +15,7 @@ class ActiveOrdersScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Active Orders'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: () => controller.fetchOrders(),
-          ),
+          // Real-time updates enabled
         ],
       ),
       body: Obx(() {

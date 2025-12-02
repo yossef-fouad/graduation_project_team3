@@ -10,26 +10,27 @@ class ActiveOrdersController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    fetchOrders();
+    _setupStream();
   }
 
-  Future<void> fetchOrders() async {
+  void _setupStream() {
     isLoading.value = true;
-    try {
-      final fetchedOrders = await _service.getPendingOrders();
-      orders.assignAll(fetchedOrders);
-    } catch (e) {
-      Get.snackbar('Error', 'Failed to load orders: $e');
-    } finally {
+    orders.bindStream(_service.getOrdersStream().map((event) {
       isLoading.value = false;
-    }
+      return event;
+    }));
+  }
+
+  // Kept for manual refresh if needed, though stream handles it.
+  void fetchOrders() {
+    // Re-binding stream or just ignoring. 
+    // Since bindStream manages subscription, we might not need to do anything.
+    // But if the user insists on a refresh button, we could just ensure stream is active.
   }
 
   Future<void> completeOrder(String orderId) async {
     try {
       await _service.markOrderAsDone(orderId);
-      // Remove from local list to update UI immediately
-      orders.removeWhere((o) => o.order.id == orderId);
       Get.snackbar('Success', 'Order marked as done');
     } catch (e) {
       Get.snackbar('Error', 'Failed to update order: $e');
@@ -39,7 +40,6 @@ class ActiveOrdersController extends GetxController {
   Future<void> cancelOrder(String orderId) async {
     try {
       await _service.cancelOrder(orderId);
-      orders.removeWhere((o) => o.order.id == orderId);
       Get.snackbar('Success', 'Order cancelled');
     } catch (e) {
       Get.snackbar('Error', 'Failed to cancel order: $e');

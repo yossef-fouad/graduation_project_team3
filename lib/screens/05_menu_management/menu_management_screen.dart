@@ -6,6 +6,7 @@ import 'package:order_pad/models/ingredient.dart';
 import 'package:order_pad/widgets/category_card.dart';
 import 'package:order_pad/widgets/meal_card.dart';
 import 'package:order_pad/screens/05_menu_management/menu_controller.dart';
+import 'package:image_picker/image_picker.dart';
 
 class MenuManagementScreen extends StatelessWidget {
   const MenuManagementScreen({super.key});
@@ -99,19 +100,22 @@ class MenuManagementScreen extends StatelessWidget {
                     separatorBuilder: (_, __) => const Divider(height: 1),
                     itemBuilder: (_, i) {
                       final m = c.meals[i];
-                      final category = c.categories.firstWhere(
-                        (x) => x.id == m.categoryId,
-                        orElse: () => Category(id: '', name: 'Uncategorized'),
-                      );
-                      final accent = category.id.isEmpty ? Colors.grey : _categoryColor(category.name);
+                      final category = c.categories.firstWhere((cat) => cat.id == m.categoryId, orElse: () => Category(id: '', name: 'Uncategorized'));
+                      final accent = _categoryColor(category.name);
                       final deleting = c.deletingMealId.value == m.id;
-                      final updating = c.updatingMealId.value == m.id;
+                      final updating = c.savingMeal.value;
+                      
+                      final rating = c.mealRatings[m.id];
+                      final count = c.mealReviewCounts[m.id];
+
                       return MealCard(
                         meal: m,
                         categoryName: category.name,
                         accentColor: accent,
                         isDeleting: deleting,
                         isUpdating: updating,
+                        rating: rating,
+                        reviewCount: count,
                         onEdit: deleting ? null : () => _showEditMealDialog(context, c, m),
                         onToggleAvailable: (updating || deleting)
                             ? null
@@ -339,7 +343,22 @@ class MenuManagementScreen extends StatelessWidget {
               TextField(controller: nameCtl, decoration: const InputDecoration(labelText: 'Name')),
               TextField(controller: priceCtl, decoration: const InputDecoration(labelText: 'Price'), keyboardType: TextInputType.numberWithOptions(decimal: true)),
               TextField(controller: descCtl, decoration: const InputDecoration(labelText: 'Description')),
-              TextField(controller: imageCtl, decoration: const InputDecoration(labelText: 'Image URL')),
+              TextField(
+                controller: imageCtl,
+                decoration: InputDecoration(
+                  labelText: 'Image URL',
+                  suffixIcon: IconButton(
+                    icon: const Icon(Icons.photo_library),
+                    onPressed: () async {
+                      final picker = ImagePicker();
+                      final image = await picker.pickImage(source: ImageSource.gallery);
+                      if (image != null) {
+                        imageCtl.text = image.path;
+                      }
+                    },
+                  ),
+                ),
+              ),
               DropdownButtonFormField<String>(
                 value: selectedCat,
                 items: [
@@ -448,7 +467,22 @@ class MenuManagementScreen extends StatelessWidget {
               TextField(controller: nameCtl, decoration: const InputDecoration(labelText: 'Name')),
               TextField(controller: priceCtl, decoration: const InputDecoration(labelText: 'Price'), keyboardType: TextInputType.numberWithOptions(decimal: true)),
               TextField(controller: descCtl, decoration: const InputDecoration(labelText: 'Description')),
-              TextField(controller: imageCtl, decoration: const InputDecoration(labelText: 'Image URL')),
+              TextField(
+                controller: imageCtl,
+                decoration: InputDecoration(
+                  labelText: 'Image URL',
+                  suffixIcon: IconButton(
+                    icon: const Icon(Icons.photo_library),
+                    onPressed: () async {
+                      final picker = ImagePicker();
+                      final image = await picker.pickImage(source: ImageSource.gallery);
+                      if (image != null) {
+                        imageCtl.text = image.path;
+                      }
+                    },
+                  ),
+                ),
+              ),
               DropdownButtonFormField<String>(
                 value: selectedCat,
                 items: [

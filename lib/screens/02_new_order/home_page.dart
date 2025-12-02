@@ -53,10 +53,7 @@ class _HomePageState extends State<HomePage> {
               builder:
                   (controller) => GestureDetector(
                     onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => CartPage()),
-                      );
+                      Get.to(() => CartPage());
                     },
                     child: Stack(
                       children: [
@@ -190,14 +187,7 @@ class _HomePageState extends State<HomePage> {
                         padding: const EdgeInsets.symmetric(horizontal: 6.0),
                         child: GestureDetector(
                           onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder:
-                                    (context) =>
-                                        CategoryMealsPage(category: category),
-                              ),
-                            );
+                            Get.to(() => CategoryMealsPage(category: category));
                           },
                           child: Container(
                             width: 90,

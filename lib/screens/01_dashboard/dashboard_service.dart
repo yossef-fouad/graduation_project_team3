@@ -19,11 +19,14 @@ class TopSellingMeal {
 }
 
 class DashboardService {
+  // DATA SOURCE: Fetches all categories from the 'categories' table in Supabase, ordered by name.
   Future<List<Category>> getCategories() async {
     final res = await cloud.from('categories').select().order('name');
     return (res as List).map((e) => Category.fromMap(e)).toList();
   }
 
+  // DATA SOURCE: Fetches sales data from the 'view_meal_sales' view in Supabase.
+  // Supports pagination (page/pageSize) and filtering by categoryId.
   Future<List<TopSellingMeal>> getTopSellingMeals({
     int page = 0, 
     int pageSize = 10,

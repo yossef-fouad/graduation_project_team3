@@ -6,6 +6,8 @@ class MealItem {
   final double price;
   final String? imageUrl;
   final bool isAvailable;
+  final List<String> ingredients;
+
   MealItem({
     required this.id,
     this.categoryId,
@@ -14,7 +16,9 @@ class MealItem {
     required this.price,
     this.imageUrl,
     required this.isAvailable,
+    this.ingredients = const [],
   });
+
   factory MealItem.fromMap(Map<String, dynamic> m) {
     final p = m['price'];
     return MealItem(
@@ -25,6 +29,7 @@ class MealItem {
       price: p is num ? p.toDouble() : double.tryParse(p?.toString() ?? '0') ?? 0,
       imageUrl: m['image_url'] as String?,
       isAvailable: (m['is_available'] ?? true) as bool,
+      ingredients: (m['ingredients'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [],
     );
   }
 
@@ -36,6 +41,7 @@ class MealItem {
     double? price,
     String? imageUrl,
     bool? isAvailable,
+    List<String>? ingredients,
   }) {
     return MealItem(
       id: id ?? this.id,
@@ -45,6 +51,7 @@ class MealItem {
       price: price ?? this.price,
       imageUrl: imageUrl ?? this.imageUrl,
       isAvailable: isAvailable ?? this.isAvailable,
+      ingredients: ingredients ?? this.ingredients,
     );
   }
 }

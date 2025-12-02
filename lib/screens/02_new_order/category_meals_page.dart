@@ -46,10 +46,7 @@ class _CategoryMealsPageState extends State<CategoryMealsPage> {
             builder:
                 (controller) => IconButton(
                   onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => CartPage()),
-                    );
+                    Get.to(() => CartPage());
                   },
                   icon: Stack(
                     children: [

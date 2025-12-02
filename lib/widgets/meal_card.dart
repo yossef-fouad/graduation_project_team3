@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:order_pad/models/meal_item.dart';
 
+// MealCard Widget
 class MealCard extends StatelessWidget {
   final MealItem meal;
   final String categoryName;
@@ -11,6 +12,9 @@ class MealCard extends StatelessWidget {
   final VoidCallback? onDelete;
   final bool isDeleting;
   final bool isUpdating;
+  final double? rating;
+  final int? reviewCount;
+
   const MealCard({
     super.key,
     required this.meal,
@@ -21,12 +25,16 @@ class MealCard extends StatelessWidget {
     required this.onDelete,
     this.isDeleting = false,
     this.isUpdating = false,
+    this.rating,
+    this.reviewCount,
   });
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final description = (meal.description ?? '').trim();
-    final fadedBodyColor = theme.textTheme.bodySmall?.color?.withValues(alpha:0.8);
+    final fadedBodyColor = theme.textTheme.bodySmall?.color?.withValues(alpha: 0.8);
+
     return Card(
       elevation: 1,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -82,16 +90,23 @@ class MealCard extends StatelessWidget {
                     children: [
                       _InfoChip(
                         label: categoryName,
-                        backgroundColor: accentColor.withValues(alpha:0.15),
+                        backgroundColor: accentColor.withValues(alpha: 0.15),
                         textColor: accentColor,
                         icon: Icons.category,
                       ),
                       _InfoChip(
                         label: meal.isAvailable ? 'Available' : 'Hidden',
-                        backgroundColor: (meal.isAvailable ? Colors.green : Colors.red).withValues(alpha:0.15),
+                        backgroundColor: (meal.isAvailable ? Colors.green : Colors.red).withValues(alpha: 0.15),
                         textColor: meal.isAvailable ? Colors.green.shade700 : Colors.red.shade700,
                         icon: meal.isAvailable ? Icons.check_circle : Icons.remove_circle,
                       ),
+                      if (rating != null)
+                        _InfoChip(
+                          label: '${rating!.toStringAsFixed(1)} (${reviewCount ?? 0})',
+                          backgroundColor: Colors.amber.withValues(alpha: 0.15),
+                          textColor: Colors.amber.shade800,
+                          icon: Icons.star,
+                        ),
                     ],
                   ),
                 ],
@@ -139,7 +154,7 @@ class _Avatar extends StatelessWidget {
             height: 64,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: accentColor.withValues(alpha:0.4), width: 2),
+              border: Border.all(color: accentColor.withValues(alpha: 0.4), width: 2),
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(14),

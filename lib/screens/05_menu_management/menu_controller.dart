@@ -32,12 +32,28 @@ class MenuManagementController extends GetxController {
   int mealOffset = 0;
   static const pageSize = 20;
 
+  final mealRatings = <String, double>{}.obs;
+  final mealReviewCounts = <String, int>{}.obs;
+
   @override
   void onInit() {
     super.onInit();
     fetchCategories();
     fetchMeals();
     fetchIngredients();
+    fetchRatings();
+  }
+
+  Future<void> fetchRatings() async {
+    try {
+      final data = await _service.getMealRatings();
+      data.forEach((mealId, stats) {
+        mealRatings[mealId] = (stats['average'] as num).toDouble();
+        mealReviewCounts[mealId] = (stats['count'] as num).toInt();
+      });
+    } catch (e) {
+      print('Error fetching ratings: $e');
+    }
   }
 
   Future<void> fetchIngredients() async {

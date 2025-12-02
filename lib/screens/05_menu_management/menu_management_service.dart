@@ -7,6 +7,7 @@ import 'package:order_pad/models/meal_ingredient.dart';
 
 class MenuManagementService {
   // Categories
+  // DATA SOURCE: Fetches all categories from the 'categories' table in Supabase.
   Future<List<Category>> getCategories() async {
     final res = await cloud.from('categories').select().order('name');
     return (res as List).map((e) => Category.fromMap(e as Map<String, dynamic>)).toList();
@@ -25,6 +26,7 @@ class MenuManagementService {
   }
 
   // Meals
+  // DATA SOURCE: Fetches meals from the 'meals' table in Supabase. Supports pagination and filtering by category.
   Future<List<MealItem>> getMeals({
     required int offset,
     required int limit,
@@ -114,4 +116,31 @@ class MenuManagementService {
       );
     }
   }
+
+  // Ratings
+  Future<Map<String, Map<String, num>>> getMealRatings() async {
+    final res = await cloud.from('reviews').select('meal_id, rating');
+    
+    final ratings = <String, List<int>>{};
+    for (var r in res) {
+      final mealId = r['meal_id'] as String;
+      final rating = (r['rating'] as num).toInt();
+      if (!ratings.containsKey(mealId)) {
+        ratings[mealId] = [];
+      }
+      ratings[mealId]!.add(rating);
+    }
+
+    final result = <String, Map<String, num>>{};
+    ratings.forEach((mealId, list) {
+      final avg = list.reduce((a, b) => a + b) / list.length;
+      result[mealId] = {
+        'average': avg,
+        'count': list.length,
+      };
+    });
+    
+    return result;
+  }
 }
+

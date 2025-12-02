@@ -17,6 +17,18 @@ class ChefOrderItem {
 }
 
 class ActiveOrdersService {
+  Stream<List<ChefOrder>> getOrdersStream() {
+    return cloud
+        .from('orders')
+        .stream(primaryKey: ['id'])
+        .eq('status', 'Pending')
+        .order('created_at', ascending: true)
+        .asyncMap((data) async {
+          final orders = data.map((e) => Order.fromMap(e)).toList();
+          return _enrichOrders(orders);
+        });
+  }
+
   Future<List<ChefOrder>> getPendingOrders() async {
     // 1. Fetch pending orders
     final ordersRes = await cloud
@@ -26,7 +38,10 @@ class ActiveOrdersService {
         .order('created_at', ascending: true);
     
     final orders = (ordersRes as List).map((e) => Order.fromMap(e)).toList();
+    return _enrichOrders(orders);
+  }
 
+  Future<List<ChefOrder>> _enrichOrders(List<Order> orders) async {
     if (orders.isEmpty) return [];
 
     final orderIds = orders.map((e) => e.id).toList();
