@@ -29,15 +29,23 @@ class ActiveOrdersController extends GetxController {
   }
 
   Future<void> completeOrder(String orderId) async {
+    // Optimistic update: Remove immediately
+    orders.removeWhere((co) => co.order.id == orderId);
+
     try {
       await _service.markOrderAsDone(orderId);
       Get.snackbar('Success', 'Order marked as done');
     } catch (e) {
       Get.snackbar('Error', 'Failed to update order: $e');
+      // If error, the stream should eventually correct the state, 
+      // or we could trigger a refresh here.
     }
   }
 
   Future<void> cancelOrder(String orderId) async {
+    // Optimistic update: Remove immediately
+    orders.removeWhere((co) => co.order.id == orderId);
+
     try {
       await _service.cancelOrder(orderId);
       Get.snackbar('Success', 'Order cancelled');

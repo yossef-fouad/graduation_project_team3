@@ -41,27 +41,32 @@ class MenuManagementScreen extends StatelessWidget {
             ),
             Expanded(
               child: Obx(() {
-                if (c.categoriesLoading.value && c.categories.isEmpty) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                if (c.categories.isEmpty) {
+                final isLoading = c.categoriesLoading.value && c.categories.isEmpty;
+                final list = isLoading 
+                    ? List.generate(4, (i) => Category(id: 'dummy_$i', name: 'Category Name'))
+                    : c.categories;
+
+                if (!isLoading && c.categories.isEmpty) {
                   return const Center(child: Text('No categories yet'));
                 }
-                return ListView.separated(
-                  itemCount: c.categories.length,
-                  separatorBuilder: (_, __) => const Divider(height: 1),
-                  itemBuilder: (_, i) {
-                    final cat = c.categories[i];
-                    final color = _categoryColor(cat.name);
-                    final deleting = c.deletingCategoryId.value == cat.id;
-                    return CategoryCard(
-                      name: cat.name,
-                      accentColor: color,
-                      isBusy: deleting,
-                      onEdit: deleting ? null : () => _showEditCategoryDialog(context, c, cat),
-                      onDelete: deleting ? null : () => _confirmDeleteCategory(context, c, cat),
-                    );
-                  },
+                return Skeletonizer(
+                  enabled: isLoading,
+                  child: ListView.separated(
+                    itemCount: list.length,
+                    separatorBuilder: (_, __) => const Divider(height: 1),
+                    itemBuilder: (_, i) {
+                      final cat = list[i];
+                      final color = _categoryColor(cat.name);
+                      final deleting = c.deletingCategoryId.value == cat.id;
+                      return CategoryCard(
+                        name: cat.name,
+                        accentColor: color,
+                        isBusy: deleting,
+                        onEdit: deleting ? null : () => _showEditCategoryDialog(context, c, cat),
+                        onDelete: deleting ? null : () => _confirmDeleteCategory(context, c, cat),
+                      );
+                    },
+                  ),
                 );
               }),
             ),
@@ -83,10 +88,19 @@ class MenuManagementScreen extends StatelessWidget {
             ),
             Expanded(
               child: Obx(() {
-                if (c.mealsLoading.value && c.meals.isEmpty) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                if (c.meals.isEmpty) {
+                final isLoading = c.mealsLoading.value && c.meals.isEmpty;
+                final list = isLoading 
+                    ? List.generate(6, (i) => MealItem(
+                        id: 'dummy_$i', 
+                        name: 'Meal Name Placeholder', 
+                        price: 99.99, 
+                        isAvailable: true, 
+                        description: 'Description placeholder for skeleton loading',
+                        imageUrl: '',
+                      )) 
+                    : c.meals;
+
+                if (!isLoading && c.meals.isEmpty) {
                   return const Center(child: Text('No meals found'));
                 }
                 return NotificationListener<ScrollNotification>(
@@ -96,34 +110,37 @@ class MenuManagementScreen extends StatelessWidget {
                     }
                     return false;
                   },
-                  child: ListView.separated(
-                    itemCount: c.meals.length,
-                    separatorBuilder: (_, __) => const Divider(height: 1),
-                    itemBuilder: (_, i) {
-                      final m = c.meals[i];
-                      final category = c.categories.firstWhere((cat) => cat.id == m.categoryId, orElse: () => Category(id: '', name: 'Uncategorized'));
-                      final accent = _categoryColor(category.name);
-                      final deleting = c.deletingMealId.value == m.id;
-                      final updating = c.savingMeal.value;
-                      
-                      final rating = c.mealRatings[m.id];
-                      final count = c.mealReviewCounts[m.id];
+                  child: Skeletonizer(
+                    enabled: isLoading,
+                    child: ListView.separated(
+                      itemCount: list.length,
+                      separatorBuilder: (_, __) => const Divider(height: 1),
+                      itemBuilder: (_, i) {
+                        final m = list[i];
+                        final category = c.categories.firstWhere((cat) => cat.id == m.categoryId, orElse: () => Category(id: '', name: 'Uncategorized'));
+                        final accent = _categoryColor(category.name);
+                        final deleting = c.deletingMealId.value == m.id;
+                        final updating = c.savingMeal.value;
+                        
+                        final rating = c.mealRatings[m.id];
+                        final count = c.mealReviewCounts[m.id];
 
-                      return MealCard(
-                        meal: m,
-                        categoryName: category.name,
-                        accentColor: accent,
-                        isDeleting: deleting,
-                        isUpdating: updating,
-                        rating: rating,
-                        reviewCount: count,
-                        onEdit: deleting ? null : () => _showEditMealDialog(context, c, m),
-                        onToggleAvailable: (updating || deleting)
-                            ? null
-                            : () => c.updateMeal(m, isAvailable: !m.isAvailable, refresh: false),
-                        onDelete: deleting ? null : () => _confirmDeleteMeal(context, c, m),
-                      );
-                    },
+                        return MealCard(
+                          meal: m,
+                          categoryName: category.name,
+                          accentColor: accent,
+                          isDeleting: deleting,
+                          isUpdating: updating,
+                          rating: rating,
+                          reviewCount: count,
+                          onEdit: deleting ? null : () => _showEditMealDialog(context, c, m),
+                          onToggleAvailable: (updating || deleting)
+                              ? null
+                              : () => c.updateMeal(m, isAvailable: !m.isAvailable, refresh: false),
+                          onDelete: deleting ? null : () => _confirmDeleteMeal(context, c, m),
+                        );
+                      },
+                    ),
                   ),
                 );
               }),
@@ -150,40 +167,45 @@ class MenuManagementScreen extends StatelessWidget {
             ),
             Expanded(
               child: Obx(() {
-                if (c.ingredientsLoading.value && c.ingredients.isEmpty) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                if (c.ingredients.isEmpty) {
+                final isLoading = c.ingredientsLoading.value && c.ingredients.isEmpty;
+                final list = isLoading 
+                    ? List.generate(8, (i) => Ingredient(id: 'dummy_$i', name: 'Ingredient Name', stockLevel: 100, unit: 'kg')) 
+                    : c.ingredients;
+
+                if (!isLoading && c.ingredients.isEmpty) {
                   return const Center(child: Text('No ingredients yet'));
                 }
-                return ListView.separated(
-                  itemCount: c.ingredients.length,
-                  separatorBuilder: (_, __) => const Divider(height: 1),
-                  itemBuilder: (_, i) {
-                    final ing = c.ingredients[i];
-                    final deleting = c.deletingIngredientId.value == ing.id;
-                    return ListTile(
-                      title: Text(ing.name),
-                      subtitle: Text('Stock: ${ing.stockLevel} ${ing.unit}'),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          if (deleting)
-                            const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
-                          else ...[
-                            IconButton(
-                              icon: const Icon(Icons.edit, color: Colors.blue),
-                              onPressed: () => _showEditIngredientDialog(context, c, ing),
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.delete, color: Colors.red),
-                              onPressed: () => _confirmDeleteIngredient(context, c, ing),
-                            ),
+                return Skeletonizer(
+                  enabled: isLoading,
+                  child: ListView.separated(
+                    itemCount: list.length,
+                    separatorBuilder: (_, __) => const Divider(height: 1),
+                    itemBuilder: (_, i) {
+                      final ing = list[i];
+                      final deleting = c.deletingIngredientId.value == ing.id;
+                      return ListTile(
+                        title: Text(ing.name),
+                        subtitle: Text('Stock: ${ing.stockLevel} ${ing.unit}'),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (deleting)
+                              const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                            else ...[
+                              IconButton(
+                                icon: const Icon(Icons.edit, color: Colors.blue),
+                                onPressed: () => _showEditIngredientDialog(context, c, ing),
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.delete, color: Colors.red),
+                                onPressed: () => _confirmDeleteIngredient(context, c, ing),
+                              ),
+                            ],
                           ],
-                        ],
-                      ),
-                    );
-                  },
+                        ),
+                      );
+                    },
+                  ),
                 );
               }),
             ),

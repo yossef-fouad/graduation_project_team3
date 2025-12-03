@@ -5,12 +5,20 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 class OrderHistoryService {
   final _client = Supabase.instance.client;
 
-  Future<List<Order>> getCompletedOrders() async {
-    final res = await _client
+  Future<List<Order>> getCompletedOrders({bool todayOnly = false}) async {
+    var query = _client
         .from('orders')
         .select()
-        .filter('status', 'in', ['Completed', 'Cancelled'])
-        .order('created_at', ascending: false);
+        .filter('status', 'in', ['Completed', 'Cancelled']);
+
+    if (todayOnly) {
+      final now = DateTime.now();
+      final startOfDay = DateTime(now.year, now.month, now.day).toIso8601String();
+      final endOfDay = DateTime(now.year, now.month, now.day, 23, 59, 59).toIso8601String();
+      query = query.gte('created_at', startOfDay).lte('created_at', endOfDay);
+    }
+
+    final res = await query.order('created_at', ascending: false);
     
     return (res as List).map((e) => Order.fromMap(e)).toList();
   }

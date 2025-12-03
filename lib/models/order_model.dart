@@ -1,11 +1,13 @@
 class Order {
   final String id;
+  final String customerPhone;
   final DateTime createdAt;
   final double totalAmount;
   final String status;
 
   Order({
     required this.id,
+    required this.customerPhone,
     required this.createdAt,
     required this.totalAmount,
     required this.status,
@@ -14,6 +16,7 @@ class Order {
   factory Order.fromMap(Map<String, dynamic> map) {
     return Order(
       id: map['id'] as String,
+      customerPhone: map['customer_phone']?.toString() ?? 'Unknown',
       createdAt: DateTime.parse(map['created_at'] as String),
       totalAmount: (map['total_price'] as num).toDouble(),
       status: map['status'] as String,

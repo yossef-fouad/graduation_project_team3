@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:order_pad/screens/02_new_order/home_page.dart';
 import 'package:order_pad/screens/04_order_history/order_history_screen.dart';
 import 'package:order_pad/screens/02_new_order/cart_page.dart';
+import 'package:get/get.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:order_pad/screens/role_selection_screen.dart';
 import 'package:order_pad/widgets/colors.dart';
 
 class MainNavigationScreen extends StatefulWidget {
@@ -24,7 +27,37 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _screens[_currentIndex],
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(top: 50),
+        child: FloatingActionButton.small(
+          onPressed: () async {
+            final prefs = await SharedPreferences.getInstance();
+            await prefs.remove('user_role');
+            Get.offAll(() => const RoleSelectionScreen());
+          },
+          backgroundColor: Colors.white,
+          child: const Icon(Icons.logout, color: Colors.red),
+        ),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endTop,
+      body: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 300),
+        switchInCurve: Curves.easeOut,
+        switchOutCurve: Curves.easeIn,
+        transitionBuilder: (Widget child, Animation<double> animation) {
+          return FadeTransition(
+            opacity: animation,
+            child: ScaleTransition(
+              scale: Tween<double>(begin: 0.95, end: 1.0).animate(animation),
+              child: child,
+            ),
+          );
+        },
+        child: Container(
+          key: ValueKey<int>(_currentIndex),
+          child: _screens[_currentIndex],
+        ),
+      ),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           boxShadow: [

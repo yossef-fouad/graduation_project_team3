@@ -11,6 +11,7 @@ class OrderHistoryController extends GetxController {
   final OrderHistoryService _service = OrderHistoryService();
   final orders = <Order>[].obs;
   final isLoading = true.obs;
+  final isTodayOnly = false.obs;
 
   @override
   void onInit() {
@@ -18,10 +19,15 @@ class OrderHistoryController extends GetxController {
     fetchOrders();
   }
 
+  void toggleFilter() {
+    isTodayOnly.value = !isTodayOnly.value;
+    fetchOrders();
+  }
+
   void fetchOrders() async {
     try {
       isLoading.value = true;
-      orders.value = await _service.getCompletedOrders();
+      orders.value = await _service.getCompletedOrders(todayOnly: isTodayOnly.value);
     } catch (e) {
       Get.snackbar('Error', 'Failed to load order history: $e');
     } finally {
@@ -62,6 +68,27 @@ class OrderHistoryScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Order History'),
         centerTitle: true,
+        actions: [
+          Obx(
+            () => IconButton(
+              onPressed: controller.toggleFilter,
+              icon: Icon(
+                controller.isTodayOnly.value
+                    ? Icons.filter_alt
+                    : Icons.filter_alt_off_outlined,
+                color:
+                    controller.isTodayOnly.value
+                        ? AppColors.primary
+                        : Colors.grey,
+              ),
+              tooltip:
+                  controller.isTodayOnly.value
+                      ? 'Show All History'
+                      : 'Show Today Only',
+            ),
+          ),
+          const SizedBox(width: 8),
+        ],
       ),
       body: Obx(() {
         final isLoading = controller.isLoading.value && controller.orders.isEmpty;
@@ -70,6 +97,7 @@ class OrderHistoryScreen extends StatelessWidget {
                 6,
                 (i) => Order(
                   id: 'dummy_order_$i',
+                  customerPhone: '0123456789',
                   createdAt: DateTime.now(),
                   totalAmount: 123.45,
                   status: 'Completed',
@@ -96,7 +124,7 @@ class OrderHistoryScreen extends StatelessWidget {
                 child: ListTile(
                   contentPadding: const EdgeInsets.all(16),
                   title: Text(
-                    'Order #${order.id.length > 8 ? order.id.substring(0, 8) : order.id}...', // Shorten ID
+                    'Phone: ${order.customerPhone}',
                     style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                   ),
                   subtitle: Column(

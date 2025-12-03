@@ -3,6 +3,8 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:order_pad/screens/03_active_orders/active_orders_controller.dart';
 import 'package:order_pad/screens/03_active_orders/active_orders_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:order_pad/screens/role_selection_screen.dart';
 
 class ActiveOrdersScreen extends StatelessWidget {
   ActiveOrdersScreen({super.key});
@@ -15,7 +17,14 @@ class ActiveOrdersScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Active Orders'),
         actions: [
-          // Real-time updates enabled
+          IconButton(
+            onPressed: () async {
+              final prefs = await SharedPreferences.getInstance();
+              await prefs.remove('user_role');
+              Get.offAll(() => const RoleSelectionScreen());
+            },
+            icon: const Icon(Icons.logout, color: Colors.red),
+          ),
         ],
       ),
       body: Obx(() {

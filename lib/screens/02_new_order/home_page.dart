@@ -8,7 +8,9 @@ import 'package:order_pad/screens/02_new_order/category_meals_page.dart';
 import 'package:order_pad/screens/02_new_order/cart_page.dart';
 import 'package:order_pad/services/categories_service.dart';
 import 'package:order_pad/services/cart_controller.dart';
+import 'package:order_pad/widgets/animated_cart_badge.dart';
 import 'package:order_pad/widgets/colors.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -50,44 +52,7 @@ class _HomePageState extends State<HomePage> {
             SizedBox(width: 10),
             Icon(Icons.keyboard_arrow_down_rounded, size: 34),
             Spacer(),
-            GetBuilder<CartController>(
-              builder:
-                  (controller) => GestureDetector(
-                    onTap: () {
-                      Get.to(() => CartPage());
-                    },
-                    child: Stack(
-                      children: [
-                        SvgPicture.asset("assets/icons/basket.svg"),
-                        if (controller.totalItems > 0)
-                          Positioned(
-                            right: 0,
-                            top: 0,
-                            child: Container(
-                              padding: EdgeInsets.all(4),
-                              decoration: BoxDecoration(
-                                color: AppColors.secondary,
-                                shape: BoxShape.circle,
-                              ),
-                              constraints: BoxConstraints(
-                                minWidth: 18,
-                                minHeight: 18,
-                              ),
-                              child: Text(
-                                controller.totalItems.toString(),
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-            ),
+            const AnimatedCartBadge(),
           ],
         ),
       ),
@@ -137,13 +102,17 @@ class _HomePageState extends State<HomePage> {
             FutureBuilder<List<Category>>(
               future: _categoriesFuture,
               builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return Container(
-                    height: 120,
-                    alignment: Alignment.center,
-                    child: CircularProgressIndicator(color: AppColors.primary),
-                  );
-                }
+                final isLoading = snapshot.connectionState == ConnectionState.waiting;
+                final categories = isLoading
+                    ? List.generate(
+                        5,
+                        (index) => Category(
+                          id: 'dummy_$index',
+                          name: 'Category Name',
+                          imageUrl: '',
+                        ),
+                      )
+                    : (snapshot.data ?? []);
 
                 if (snapshot.hasError) {
                   return Container(
@@ -163,9 +132,7 @@ class _HomePageState extends State<HomePage> {
                   );
                 }
 
-                final categories = snapshot.data ?? [];
-
-                if (categories.isEmpty) {
+                if (!isLoading && categories.isEmpty) {
                   return Container(
                     height: 120,
                     alignment: Alignment.center,
@@ -176,177 +143,182 @@ class _HomePageState extends State<HomePage> {
                   );
                 }
 
-                return SizedBox(
-                  height: 140,
-                  child: ListView.builder(
-                    scrollDirection: Axis.horizontal,
-                    padding: EdgeInsets.symmetric(horizontal: 12),
-                    itemCount: categories.length,
-                    itemBuilder: (context, index) {
-                      final category = categories[index];
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                        child: GestureDetector(
-                          onTap: () {
-                            Get.to(() => CategoryMealsPage(category: category));
-                          },
-                          child: Container(
-                            width: 110,
-                            child: Column(
-                              children: [
-                                // Modern card with image or gradient
-                                Container(
-                                  width: 110,
-                                  height: 100,
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(18),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black.withOpacity(0.1),
-                                        blurRadius: 12,
-                                        offset: Offset(0, 6),
-                                      ),
-                                    ],
-                                  ),
-                                  child: ClipRRect(
-                                    borderRadius: BorderRadius.circular(18),
-                                    child:
-                                        category.imageUrl != null &&
-                                                category.imageUrl!.isNotEmpty
-                                            ? Stack(
-                                              fit: StackFit.expand,
-                                              children: [
-                                                // Category image
-                                                Image.network(
-                                                  category.imageUrl!,
-                                                  fit: BoxFit.cover,
-                                                  errorBuilder: (_, __, ___) {
-                                                    // Fallback to gradient on error
-                                                    return Container(
-                                                      decoration: BoxDecoration(
-                                                        gradient: LinearGradient(
-                                                          colors: [
-                                                            AppColors.primary
-                                                                .withOpacity(
-                                                                  0.8,
-                                                                ),
-                                                            AppColors.secondary
-                                                                .withOpacity(
-                                                                  0.8,
-                                                                ),
-                                                          ],
-                                                          begin:
-                                                              Alignment.topLeft,
-                                                          end:
-                                                              Alignment
-                                                                  .bottomRight,
+                return Skeletonizer(
+                  enabled: isLoading,
+                  child: SizedBox(
+                    height: 140,
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      padding: EdgeInsets.symmetric(horizontal: 12),
+                      itemCount: categories.length,
+                      itemBuilder: (context, index) {
+                        final category = categories[index];
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                          child: GestureDetector(
+                            onTap: () {
+                              if (!isLoading) {
+                                Get.to(() => CategoryMealsPage(category: category));
+                              }
+                            },
+                            child: Container(
+                              width: 110,
+                              child: Column(
+                                children: [
+                                  // Modern card with image or gradient
+                                  Container(
+                                    width: 110,
+                                    height: 100,
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(18),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.1),
+                                          blurRadius: 12,
+                                          offset: Offset(0, 6),
+                                        ),
+                                      ],
+                                    ),
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(18),
+                                      child:
+                                          category.imageUrl != null &&
+                                                  category.imageUrl!.isNotEmpty
+                                              ? Stack(
+                                                fit: StackFit.expand,
+                                                children: [
+                                                  // Category image
+                                                  Image.network(
+                                                    category.imageUrl!,
+                                                    fit: BoxFit.cover,
+                                                    errorBuilder: (_, __, ___) {
+                                                      // Fallback to gradient on error
+                                                      return Container(
+                                                        decoration: BoxDecoration(
+                                                          gradient: LinearGradient(
+                                                            colors: [
+                                                              AppColors.primary
+                                                                  .withOpacity(
+                                                                    0.8,
+                                                                  ),
+                                                              AppColors.secondary
+                                                                  .withOpacity(
+                                                                    0.8,
+                                                                  ),
+                                                            ],
+                                                            begin:
+                                                                Alignment.topLeft,
+                                                            end:
+                                                                Alignment
+                                                                    .bottomRight,
+                                                          ),
                                                         ),
-                                                      ),
-                                                      child: Center(
-                                                        child: Icon(
-                                                          Icons.restaurant_menu,
-                                                          size: 40,
-                                                          color: Colors.white,
+                                                        child: Center(
+                                                          child: Icon(
+                                                            Icons.restaurant_menu,
+                                                            size: 40,
+                                                            color: Colors.white,
+                                                          ),
                                                         ),
-                                                      ),
-                                                    );
-                                                  },
-                                                  loadingBuilder: (
-                                                    context,
-                                                    child,
-                                                    loadingProgress,
-                                                  ) {
-                                                    if (loadingProgress == null)
-                                                      return child;
-                                                    return Container(
-                                                      decoration: BoxDecoration(
-                                                        gradient: LinearGradient(
-                                                          colors: [
-                                                            AppColors.primary
-                                                                .withOpacity(
-                                                                  0.3,
-                                                                ),
-                                                            AppColors.secondary
-                                                                .withOpacity(
-                                                                  0.3,
-                                                                ),
-                                                          ],
+                                                      );
+                                                    },
+                                                    loadingBuilder: (
+                                                      context,
+                                                      child,
+                                                      loadingProgress,
+                                                    ) {
+                                                      if (loadingProgress == null)
+                                                        return child;
+                                                      return Container(
+                                                        decoration: BoxDecoration(
+                                                          gradient: LinearGradient(
+                                                            colors: [
+                                                              AppColors.primary
+                                                                  .withOpacity(
+                                                                    0.3,
+                                                                  ),
+                                                              AppColors.secondary
+                                                                  .withOpacity(
+                                                                    0.3,
+                                                                  ),
+                                                            ],
+                                                          ),
                                                         ),
+                                                        child: Center(
+                                                          child:
+                                                              CircularProgressIndicator(
+                                                                color:
+                                                                    AppColors
+                                                                        .primary,
+                                                                strokeWidth: 2,
+                                                              ),
+                                                        ),
+                                                      );
+                                                    },
+                                                  ),
+                                                  // Gradient overlay for text readability
+                                                  Container(
+                                                    decoration: BoxDecoration(
+                                                      gradient: LinearGradient(
+                                                        begin:
+                                                            Alignment.topCenter,
+                                                        end:
+                                                            Alignment
+                                                                .bottomCenter,
+                                                        colors: [
+                                                          Colors.transparent,
+                                                          Colors.black
+                                                              .withOpacity(0.7),
+                                                        ],
                                                       ),
-                                                      child: Center(
-                                                        child:
-                                                            CircularProgressIndicator(
-                                                              color:
-                                                                  AppColors
-                                                                      .primary,
-                                                              strokeWidth: 2,
-                                                            ),
-                                                      ),
-                                                    );
-                                                  },
-                                                ),
-                                                // Gradient overlay for text readability
-                                                Container(
-                                                  decoration: BoxDecoration(
-                                                    gradient: LinearGradient(
-                                                      begin:
-                                                          Alignment.topCenter,
-                                                      end:
-                                                          Alignment
-                                                              .bottomCenter,
-                                                      colors: [
-                                                        Colors.transparent,
-                                                        Colors.black
-                                                            .withOpacity(0.7),
-                                                      ],
                                                     ),
                                                   ),
+                                                ],
+                                              )
+                                              : // Fallback gradient design
+                                              Container(
+                                                decoration: BoxDecoration(
+                                                  gradient: LinearGradient(
+                                                    colors: [
+                                                      AppColors.primary
+                                                          .withOpacity(0.8),
+                                                      AppColors.secondary
+                                                          .withOpacity(0.8),
+                                                    ],
+                                                    begin: Alignment.topLeft,
+                                                    end: Alignment.bottomRight,
+                                                  ),
                                                 ),
-                                              ],
-                                            )
-                                            : // Fallback gradient design
-                                            Container(
-                                              decoration: BoxDecoration(
-                                                gradient: LinearGradient(
-                                                  colors: [
-                                                    AppColors.primary
-                                                        .withOpacity(0.8),
-                                                    AppColors.secondary
-                                                        .withOpacity(0.8),
-                                                  ],
-                                                  begin: Alignment.topLeft,
-                                                  end: Alignment.bottomRight,
+                                                child: Center(
+                                                  child: Icon(
+                                                    Icons.restaurant_menu,
+                                                    size: 40,
+                                                    color: Colors.white,
+                                                  ),
                                                 ),
                                               ),
-                                              child: Center(
-                                                child: Icon(
-                                                  Icons.restaurant_menu,
-                                                  size: 40,
-                                                  color: Colors.white,
-                                                ),
-                                              ),
-                                            ),
+                                    ),
                                   ),
-                                ),
-                                SizedBox(height: 8),
-                                // Category name
-                                Text(
-                                  category.name,
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 13,
-                                    color: Colors.black87,
+                                  SizedBox(height: 8),
+                                  // Category name
+                                  Text(
+                                    category.name,
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 13,
+                                      color: Colors.black87,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
-                                  textAlign: TextAlign.center,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
                           ),
-                        ),
-                      );
-                    },
+                        );
+                      },
+                    ),
                   ),
                 );
               },

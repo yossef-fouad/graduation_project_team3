@@ -9,6 +9,10 @@ import 'package:order_pad/screens/04_order_history/order_history_screen.dart';
 import 'package:order_pad/widgets/colors.dart';
 import '../05_menu_management/menu_management_screen.dart';
 import '../06_feedback/feedback_screen.dart';
+import 'package:skeletonizer/skeletonizer.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:order_pad/screens/role_selection_screen.dart';
+
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
@@ -17,7 +21,19 @@ class DashboardScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = Get.put(DashboardController());
     return Scaffold(
-      appBar: AppBar(title: const Text('Dashboard')),
+      appBar: AppBar(
+        title: const Text('Dashboard'),
+        actions: [
+          IconButton(
+            onPressed: () async {
+              final prefs = await SharedPreferences.getInstance();
+              await prefs.remove('user_role');
+              Get.offAll(() => const RoleSelectionScreen());
+            },
+            icon: const Icon(Icons.logout, color: Colors.red),
+          ),
+        ],
+      ),
       drawer: Drawer(
         child: ListView(
           padding: EdgeInsets.zero,
@@ -169,17 +185,19 @@ class DashboardScreen extends StatelessWidget {
                       }
                       return false;
                     },
-                    child: ListView.separated(
-                      itemCount: c.topSellingMeals.length + (c.isMoreLoading.value ? 1 : 0),
-                      separatorBuilder: (_, __) => const SizedBox(height: 12),
-                      itemBuilder: (_, i) {
-                        if (i == c.topSellingMeals.length) {
-                          return const Center(child: Padding(
-                            padding: EdgeInsets.all(8.0),
-                            child: CircularProgressIndicator(),
-                          ));
-                        }
-                        final item = c.topSellingMeals[i];
+                    child: Skeletonizer(
+                      enabled: isLoading,
+                      child: ListView.separated(
+                        itemCount: list.length + (!isLoading && c.isMoreLoading.value ? 1 : 0),
+                        separatorBuilder: (_, __) => const SizedBox(height: 12),
+                        itemBuilder: (_, i) {
+                          if (!isLoading && i == list.length) {
+                            return const Center(child: Padding(
+                              padding: EdgeInsets.all(8.0),
+                              child: CircularProgressIndicator(),
+                            ));
+                          }
+                          final item = list[i];
                         
                         return Card(
                           elevation: 2,
@@ -254,7 +272,8 @@ class DashboardScreen extends StatelessWidget {
                         );
                       },
                     ),
-                  );
+                  ),
+                );
                 }),
               ),
             ],

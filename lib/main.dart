@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:order_pad/screens/01_dashboard/dashboard_screen.dart';
-import 'package:order_pad/screens/02_new_order/cart_page.dart';
-import 'package:order_pad/screens/02_new_order/category_meals_page.dart';
 import 'package:order_pad/screens/main_navigation_screen.dart';
+import 'package:order_pad/screens/role_selection_screen.dart';
 
 // ... imports
 
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:order_pad/screens/03_active_orders/active_orders_screen.dart';
 
 //test
 Future<void> main() async {
@@ -48,7 +49,44 @@ class MyApp extends StatelessWidget {
           },
         ),
       ),
-      home: const MainNavigationScreen(),
+      home: const RoleCheckScreen(),
+    );
+  }
+}
+
+class RoleCheckScreen extends StatefulWidget {
+  const RoleCheckScreen({super.key});
+
+  @override
+  State<RoleCheckScreen> createState() => _RoleCheckScreenState();
+}
+
+class _RoleCheckScreenState extends State<RoleCheckScreen> {
+  @override
+  void initState() {
+    super.initState();
+    _checkRole();
+  }
+
+  Future<void> _checkRole() async {
+    final prefs = await SharedPreferences.getInstance();
+    final role = prefs.getString('user_role');
+
+    if (role == 'waiter') {
+      Get.offAll(() => const MainNavigationScreen());
+    } else if (role == 'chef') {
+      Get.offAll(() => ActiveOrdersScreen());
+    } else if (role == 'owner') {
+      Get.offAll(() => DashboardScreen());
+    } else {
+      Get.offAll(() => const RoleSelectionScreen());
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(
+      body: Center(child: CircularProgressIndicator()),
     );
   }
 }

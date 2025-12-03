@@ -6,6 +6,7 @@ import 'package:order_pad/models/meal_item.dart';
 import 'package:order_pad/screens/02_new_order/cart_page.dart';
 import 'package:order_pad/services/cart_controller.dart';
 import 'package:order_pad/services/categories_service.dart';
+import 'package:order_pad/widgets/animated_cart_badge.dart';
 import 'package:order_pad/widgets/colors.dart';
 
 class CategoryMealsPage extends StatefulWidget {
@@ -42,44 +43,7 @@ class _CategoryMealsPageState extends State<CategoryMealsPage> {
         centerTitle: true,
         actions: [
           // Cart badge
-          GetBuilder<CartController>(
-            builder:
-                (controller) => IconButton(
-                  onPressed: () {
-                    Get.to(() => CartPage());
-                  },
-                  icon: Stack(
-                    children: [
-                      Icon(Icons.shopping_cart, size: 28),
-                      if (controller.totalItems > 0)
-                        Positioned(
-                          right: 0,
-                          top: 0,
-                          child: Container(
-                            padding: EdgeInsets.all(4),
-                            decoration: BoxDecoration(
-                              color: AppColors.secondary,
-                              shape: BoxShape.circle,
-                            ),
-                            constraints: BoxConstraints(
-                              minWidth: 18,
-                              minHeight: 18,
-                            ),
-                            child: Text(
-                              controller.totalItems.toString(),
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-          ),
+          const AnimatedCartBadge(),
           SizedBox(width: 8),
         ],
       ),
@@ -205,10 +169,40 @@ class _CategoryMealsPageState extends State<CategoryMealsPage> {
   }
 }
 
-class _MealCard extends StatelessWidget {
+class _MealCard extends StatefulWidget {
   final MealItem meal;
 
   const _MealCard({required this.meal});
+
+  @override
+  State<_MealCard> createState() => _MealCardState();
+}
+
+class _MealCardState extends State<_MealCard> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 150),
+    );
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.8).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _animateButton() {
+    _controller.forward().then((_) => _controller.reverse());
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -237,9 +231,9 @@ class _MealCard extends StatelessWidget {
             child: ClipRRect(
               borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
               child:
-                  meal.imageUrl != null && meal.imageUrl!.isNotEmpty
+                  widget.meal.imageUrl != null && widget.meal.imageUrl!.isNotEmpty
                       ? CachedNetworkImage(
-                        imageUrl: meal.imageUrl!,
+                        imageUrl: widget.meal.imageUrl!,
                         fit: BoxFit.cover,
                         width: double.infinity,
                         placeholder:
@@ -277,7 +271,7 @@ class _MealCard extends StatelessWidget {
                 children: [
                   // Meal Name
                   Text(
-                    meal.name,
+                    widget.meal.name,
                     style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.bold,
@@ -290,10 +284,10 @@ class _MealCard extends StatelessWidget {
                   SizedBox(height: 4),
 
                   // Description
-                  if (meal.description != null && meal.description!.isNotEmpty)
+                  if (widget.meal.description != null && widget.meal.description!.isNotEmpty)
                     Expanded(
                       child: Text(
-                        meal.description!,
+                        widget.meal.description!,
                         style: TextStyle(
                           fontSize: 11,
                           color: Colors.grey.shade600,
@@ -311,7 +305,7 @@ class _MealCard extends StatelessWidget {
                     children: [
                       // Price
                       Text(
-                        '\$${meal.price.toStringAsFixed(2)}',
+                        '\$${widget.meal.price.toStringAsFixed(2)}',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -324,33 +318,37 @@ class _MealCard extends StatelessWidget {
                         builder:
                             (controller) => GestureDetector(
                               onTap: () {
-                                controller.addToCart(meal);
+                                _animateButton();
+                                controller.addToCart(widget.meal);
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
-                                    content: Text('${meal.name} added to cart'),
+                                    content: Text('${widget.meal.name} added to cart'),
                                     duration: Duration(seconds: 1),
                                     backgroundColor: AppColors.primary,
                                   ),
                                 );
                               },
-                              child: Container(
-                                width: 32,
-                                height: 32,
-                                decoration: BoxDecoration(
-                                  color: AppColors.primary,
-                                  borderRadius: BorderRadius.circular(8),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: AppColors.primary.withOpacity(0.3),
-                                      blurRadius: 4,
-                                      offset: Offset(0, 2),
-                                    ),
-                                  ],
-                                ),
-                                child: Icon(
-                                  Icons.add,
-                                  size: 20,
-                                  color: Colors.white,
+                              child: ScaleTransition(
+                                scale: _scaleAnimation,
+                                child: Container(
+                                  width: 32,
+                                  height: 32,
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primary,
+                                    borderRadius: BorderRadius.circular(8),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: AppColors.primary.withOpacity(0.3),
+                                        blurRadius: 4,
+                                        offset: Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Icon(
+                                    Icons.add,
+                                    size: 20,
+                                    color: Colors.white,
+                                  ),
                                 ),
                               ),
                             ),

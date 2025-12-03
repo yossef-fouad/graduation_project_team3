@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:get/get.dart';
+import 'package:order_pad/screens/main_navigation_screen.dart';
+
 import 'package:order_pad/services/cart_controller.dart';
 import 'package:order_pad/services/order_service.dart';
 import 'package:order_pad/widgets/colors.dart';
@@ -18,7 +20,15 @@ class CartPage extends StatelessWidget {
         elevation: 0,
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () {
+            print('🟢 Back button pressed');
+            if (Navigator.of(context).canPop()) {
+              Navigator.of(context).pop();
+            } else {
+              print('🟢 Cannot pop, navigating to MainNavigationScreen');
+              Get.offAll(() => const MainNavigationScreen());
+            }
+          },
         ),
         title: Text(
           'Cart',

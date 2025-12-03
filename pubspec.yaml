@@ -43,7 +43,8 @@ dependencies:
   intl: ^0.20.2
   image_picker: ^1.1.2
   flutter_rating_bar: ^4.0.1
-  skeletonizer: ^2.0.0
+  skeletonizer: ^1.4.3
+  shared_preferences: ^2.5.3
 
 dev_dependencies:
   flutter_test:
