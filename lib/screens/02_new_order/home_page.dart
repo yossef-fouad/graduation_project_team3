@@ -2,11 +2,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
+import 'package:order_pad/controllers/home_controller.dart';
 import 'package:order_pad/models/category.dart';
 import 'package:order_pad/screens/01_dashboard/dashboard_screen.dart';
 import 'package:order_pad/screens/02_new_order/category_meals_page.dart';
-import 'package:order_pad/screens/02_new_order/cart_page.dart';
-import 'package:order_pad/services/categories_service.dart';
 import 'package:order_pad/services/cart_controller.dart';
 import 'package:order_pad/widgets/animated_cart_badge.dart';
 import 'package:order_pad/widgets/colors.dart';
@@ -31,7 +30,11 @@ class _HomePageState extends State<HomePage> {
     _categoriesFuture = CategoriesService.fetchCategories();
   }
 
-
+  List<String> banners = [
+    "assets/banners/Slider 1.png",
+    "assets/banners/Slider 2.png",
+    "assets/banners/Slider 3.png",
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -75,89 +78,27 @@ class _HomePageState extends State<HomePage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Banner Carousel
-            // Hero Section
-            Container(
-              margin: const EdgeInsets.all(16),
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [AppColors.primary, AppColors.primary.withOpacity(0.8)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.primary.withOpacity(0.3),
-                    blurRadius: 20,
-                    offset: const Offset(0, 10),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Delicious Food,',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Delivered To You',
-                            style: TextStyle(
-                              color: Colors.white.withOpacity(0.9),
-                              fontSize: 16,
-                            ),
-                          ),
-                        ],
-                      ),
-                      Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Icon(
-                          Icons.fastfood_rounded,
-                          color: Colors.white,
-                          size: 32,
+            CarouselSlider.builder(
+              itemCount: banners.length,
+              itemBuilder:
+                  (BuildContext context, int itemIndex, int pageViewIndex) =>
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Image.asset(
+                          banners[itemIndex],
+                          fit: BoxFit.cover,
                         ),
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-                  // Search Bar Placeholder
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(Icons.search, color: Colors.grey[400]),
-                        const SizedBox(width: 12),
-                        Text(
-                          'Find your favorite meal...',
-                          style: TextStyle(
-                            color: Colors.grey[400],
-                            fontSize: 14,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+              options: CarouselOptions(
+                height: 170,
+                aspectRatio: 16 / 9,
+                viewportFraction: 0.85,
+                autoPlay: true,
+                autoPlayInterval: Duration(seconds: 4),
+                autoPlayAnimationDuration: Duration(milliseconds: 800),
+                autoPlayCurve: Curves.fastOutSlowIn,
+                enlargeCenterPage: true,
+                enlargeFactor: 0.2,
               ),
             ),
 
