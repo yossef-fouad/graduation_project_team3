@@ -379,7 +379,16 @@ class MenuManagementScreen extends StatelessWidget {
                       final picker = ImagePicker();
                       final image = await picker.pickImage(source: ImageSource.gallery);
                       if (image != null) {
-                        imageCtl.text = image.path;
+                        final url = await c.uploadImage(image.path);
+                        if (url != null) {
+                          imageCtl.text = url;
+                        } else {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Failed to upload image')),
+                            );
+                          }
+                        }
                       }
                     },
                   ),
@@ -503,7 +512,16 @@ class MenuManagementScreen extends StatelessWidget {
                       final picker = ImagePicker();
                       final image = await picker.pickImage(source: ImageSource.gallery);
                       if (image != null) {
-                        imageCtl.text = image.path;
+                        final url = await c.uploadImage(image.path);
+                        if (url != null) {
+                          imageCtl.text = url;
+                        } else {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Failed to upload image')),
+                            );
+                          }
+                        }
                       }
                     },
                   ),
@@ -651,6 +669,7 @@ final categoryPalette = {
   'Appetizers': Colors.orange,
   'Main Courses': Colors.blue,
   'Drinks': Colors.green,
+  'Desserts': Colors.pink,
   'Desserts': Colors.pink,
 };
 Color _categoryColor(String name) {

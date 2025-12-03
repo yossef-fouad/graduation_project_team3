@@ -1,3 +1,5 @@
+import 'dart:io';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:order_pad/main.dart';
 import 'package:order_pad/models/category.dart';
 import 'package:order_pad/models/meal_item.dart';
@@ -141,6 +143,24 @@ class MenuManagementService {
     });
     
     return result;
+  }
+  // Image Upload
+  Future<String?> uploadImage(File file) async {
+    try {
+      final fileName = '${DateTime.now().millisecondsSinceEpoch}_${file.path.split(Platform.pathSeparator).last}';
+      await cloud.storage.from('images').upload(
+            fileName,
+            file,
+            fileOptions: const FileOptions(cacheControl: '3600', upsert: false),
+          );
+      
+      // Get public URL
+      final publicUrl = cloud.storage.from('images').getPublicUrl(fileName);
+      return publicUrl;
+    } catch (e) {
+      print('Error uploading image: $e');
+      return null;
+    }
   }
 }
 

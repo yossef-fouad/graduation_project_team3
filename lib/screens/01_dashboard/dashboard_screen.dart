@@ -7,7 +7,6 @@ import 'package:order_pad/screens/02_new_order/home_page.dart';
 import 'package:order_pad/screens/03_active_orders/active_orders_screen.dart';
 import 'package:order_pad/screens/04_order_history/order_history_screen.dart';
 import 'package:order_pad/widgets/colors.dart';
-
 import '../05_menu_management/menu_management_screen.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 
