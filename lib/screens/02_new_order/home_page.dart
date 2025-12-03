@@ -10,6 +10,8 @@ import 'package:order_pad/services/categories_service.dart';
 import 'package:order_pad/services/cart_controller.dart';
 import 'package:order_pad/widgets/animated_cart_badge.dart';
 import 'package:order_pad/widgets/colors.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:order_pad/screens/role_selection_screen.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 
 class HomePage extends StatefulWidget {
@@ -48,9 +50,25 @@ class _HomePageState extends State<HomePage> {
           children: [
             SvgPicture.asset("assets/icons/motor.svg"),
             SizedBox(width: 10),
-            Text("61 Hopper street..", style: TextStyle(fontSize: 19)),
+            Text(
+              "Order Pad",
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.w900,
+                fontStyle: FontStyle.italic,
+                color: AppColors.primary,
+                letterSpacing: 1.2,
+              ),
+            ),
             SizedBox(width: 10),
-            Icon(Icons.keyboard_arrow_down_rounded, size: 34),
+            GestureDetector(
+              onTap: () async {
+                final prefs = await SharedPreferences.getInstance();
+                await prefs.remove('user_role');
+                Get.offAll(() => const RoleSelectionScreen());
+              },
+              child: Icon(Icons.logout, size: 24, color: Colors.red),
+            ),
             Spacer(),
             const AnimatedCartBadge(),
           ],
