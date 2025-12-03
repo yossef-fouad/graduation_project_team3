@@ -7,6 +7,7 @@ import 'package:order_pad/widgets/category_card.dart';
 import 'package:order_pad/widgets/meal_card.dart';
 import 'package:order_pad/screens/05_menu_management/menu_controller.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 
 class MenuManagementScreen extends StatelessWidget {
   const MenuManagementScreen({super.key});
@@ -18,283 +19,176 @@ class MenuManagementScreen extends StatelessWidget {
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Menu Management'),
-          bottom: const TabBar(
-            tabs: [
-              Tab(text: 'Categories'),
-              Tab(text: 'Meals'),
-              Tab(text: 'Ingredients'),
-            ],
-          ),
+          bottom: const TabBar(tabs: [
+            Tab(text: 'Categories'),
+            Tab(text: 'Meals'),
+            Tab(text: 'Ingredients'),
+          ]),
         ),
-        body: TabBarView(
-          children: [
-            // Categories Tab
-            Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Obx(
-                    () => Row(
-                      children: [
-                        ElevatedButton(
-                          onPressed:
-                              c.savingCategory.value
-                                  ? null
-                                  : () => _showAddCategoryDialog(context, c),
-                          child:
-                              c.savingCategory.value
-                                  ? const SizedBox(
-                                    width: 18,
-                                    height: 18,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                    ),
-                                  )
-                                  : const Text('Add Category'),
-                        ),
-                      ],
+        body: TabBarView(children: [
+          // Categories Tab
+          Column(children: [
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Obx(() => Row(children: [
+                    ElevatedButton(
+                      onPressed: c.savingCategory.value ? null : () => _showAddCategoryDialog(context, c),
+                      child: c.savingCategory.value
+                          ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                          : const Text('Add Category'),
                     ),
-                  ),
-                ),
-                Expanded(
-                  child: Obx(() {
-                    if (c.categoriesLoading.value && c.categories.isEmpty) {
-                      return const Center(child: CircularProgressIndicator());
-                    }
-                    if (c.categories.isEmpty) {
-                      return const Center(child: Text('No categories yet'));
-                    }
-                    return ListView.separated(
-                      itemCount: c.categories.length,
-                      separatorBuilder: (_, __) => const Divider(height: 1),
-                      itemBuilder: (_, i) {
-                        final cat = c.categories[i];
-                        final color = _categoryColor(cat.name);
-                        final deleting = c.deletingCategoryId.value == cat.id;
-                        return CategoryCard(
-                          name: cat.name,
-                          accentColor: color,
-                          isBusy: deleting,
-                          onEdit:
-                              deleting
-                                  ? null
-                                  : () =>
-                                      _showEditCategoryDialog(context, c, cat),
-                          onDelete:
-                              deleting
-                                  ? null
-                                  : () =>
-                                      _confirmDeleteCategory(context, c, cat),
-                        );
-                      },
-                    );
-                  }),
-                ),
-              ],
+                  ])),
             ),
-            // Meals Tab
-            Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Row(
-                    children: [
-                      Expanded(child: _CategoryFilter(c: c)),
-                      const SizedBox(width: 12),
-                      Obx(
-                        () => ElevatedButton(
-                          onPressed:
-                              c.savingMeal.value
-                                  ? null
-                                  : () => _showAddMealDialog(context, c),
-                          child:
-                              c.savingMeal.value
-                                  ? const SizedBox(
-                                    width: 18,
-                                    height: 18,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                    ),
-                                  )
-                                  : const Text('Add Meal'),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Expanded(
-                  child: Obx(() {
-                    if (c.mealsLoading.value && c.meals.isEmpty) {
-                      return const Center(child: CircularProgressIndicator());
-                    }
-                    if (c.meals.isEmpty) {
-                      return const Center(child: Text('No meals found'));
-                    }
-                    return NotificationListener<ScrollNotification>(
-                      onNotification: (n) {
-                        if (n.metrics.pixels >=
-                            n.metrics.maxScrollExtent - 100) {
-                          c.loadMoreMeals();
-                        }
-                        return false;
-                      },
-                      child: ListView.separated(
-                        itemCount: c.meals.length,
-                        separatorBuilder: (_, __) => const Divider(height: 1),
-                        itemBuilder: (_, i) {
-                          final m = c.meals[i];
-                          final category = c.categories.firstWhere(
-                            (cat) => cat.id == m.categoryId,
-                            orElse:
-                                () => Category(id: '', name: 'Uncategorized'),
-                          );
-                          final accent = _categoryColor(category.name);
-                          final deleting = c.deletingMealId.value == m.id;
-                          final updating = c.savingMeal.value;
-
-                          final rating = c.mealRatings[m.id];
-                          final count = c.mealReviewCounts[m.id];
-
-                          return MealCard(
-                            meal: m,
-                            categoryName: category.name,
-                            accentColor: accent,
-                            isDeleting: deleting,
-                            isUpdating: updating,
-                            rating: rating,
-                            reviewCount: count,
-                            onEdit:
-                                deleting
-                                    ? null
-                                    : () => _showEditMealDialog(context, c, m),
-                            onToggleAvailable:
-                                (updating || deleting)
-                                    ? null
-                                    : () => c.updateMeal(
-                                      m,
-                                      isAvailable: !m.isAvailable,
-                                      refresh: false,
-                                    ),
-                            onDelete:
-                                deleting
-                                    ? null
-                                    : () => _confirmDeleteMeal(context, c, m),
-                          );
-                        },
-                      ),
+            Expanded(
+              child: Obx(() {
+                if (c.categoriesLoading.value && c.categories.isEmpty) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (c.categories.isEmpty) {
+                  return const Center(child: Text('No categories yet'));
+                }
+                return ListView.separated(
+                  itemCount: c.categories.length,
+                  separatorBuilder: (_, __) => const Divider(height: 1),
+                  itemBuilder: (_, i) {
+                    final cat = c.categories[i];
+                    final color = _categoryColor(cat.name);
+                    final deleting = c.deletingCategoryId.value == cat.id;
+                    return CategoryCard(
+                      name: cat.name,
+                      accentColor: color,
+                      isBusy: deleting,
+                      onEdit: deleting ? null : () => _showEditCategoryDialog(context, c, cat),
+                      onDelete: deleting ? null : () => _confirmDeleteCategory(context, c, cat),
                     );
-                  }),
-                ),
-                Obx(
-                  () =>
-                      c.loadingMore.value
-                          ? const Padding(
-                            padding: EdgeInsets.symmetric(vertical: 12),
-                            child: SizedBox(
-                              width: 24,
-                              height: 24,
-                              child: CircularProgressIndicator(strokeWidth: 2),
+                  },
+                );
+              }),
+            ),
+          ]),
+          // Meals Tab
+          Column(children: [
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Row(children: [
+                Expanded(child: _CategoryFilter(c: c)),
+                const SizedBox(width: 12),
+                Obx(() => ElevatedButton(
+                      onPressed: c.savingMeal.value ? null : () => _showAddMealDialog(context, c),
+                      child: c.savingMeal.value
+                          ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                          : const Text('Add Meal'),
+                    )),
+              ]),
+            ),
+            Expanded(
+              child: Obx(() {
+                if (c.mealsLoading.value && c.meals.isEmpty) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (c.meals.isEmpty) {
+                  return const Center(child: Text('No meals found'));
+                }
+                return NotificationListener<ScrollNotification>(
+                  onNotification: (n) {
+                    if (n.metrics.pixels >= n.metrics.maxScrollExtent - 100) {
+                      c.loadMoreMeals();
+                    }
+                    return false;
+                  },
+                  child: ListView.separated(
+                    itemCount: c.meals.length,
+                    separatorBuilder: (_, __) => const Divider(height: 1),
+                    itemBuilder: (_, i) {
+                      final m = c.meals[i];
+                      final category = c.categories.firstWhere((cat) => cat.id == m.categoryId, orElse: () => Category(id: '', name: 'Uncategorized'));
+                      final accent = _categoryColor(category.name);
+                      final deleting = c.deletingMealId.value == m.id;
+                      final updating = c.savingMeal.value;
+                      
+                      final rating = c.mealRatings[m.id];
+                      final count = c.mealReviewCounts[m.id];
+
+                      return MealCard(
+                        meal: m,
+                        categoryName: category.name,
+                        accentColor: accent,
+                        isDeleting: deleting,
+                        isUpdating: updating,
+                        rating: rating,
+                        reviewCount: count,
+                        onEdit: deleting ? null : () => _showEditMealDialog(context, c, m),
+                        onToggleAvailable: (updating || deleting)
+                            ? null
+                            : () => c.updateMeal(m, isAvailable: !m.isAvailable, refresh: false),
+                        onDelete: deleting ? null : () => _confirmDeleteMeal(context, c, m),
+                      );
+                    },
+                  ),
+                );
+              }),
+            ),
+            Obx(() => c.loadingMore.value
+                ? const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 12),
+                    child: SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2)),
+                  )
+                : const SizedBox.shrink()),
+          ]),
+          // Ingredients Tab
+          Column(children: [
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Obx(() => Row(children: [
+                    ElevatedButton(
+                      onPressed: c.savingIngredient.value ? null : () => _showAddIngredientDialog(context, c),
+                      child: c.savingIngredient.value
+                          ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                          : const Text('Add Ingredient'),
+                    ),
+                  ])),
+            ),
+            Expanded(
+              child: Obx(() {
+                if (c.ingredientsLoading.value && c.ingredients.isEmpty) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (c.ingredients.isEmpty) {
+                  return const Center(child: Text('No ingredients yet'));
+                }
+                return ListView.separated(
+                  itemCount: c.ingredients.length,
+                  separatorBuilder: (_, __) => const Divider(height: 1),
+                  itemBuilder: (_, i) {
+                    final ing = c.ingredients[i];
+                    final deleting = c.deletingIngredientId.value == ing.id;
+                    return ListTile(
+                      title: Text(ing.name),
+                      subtitle: Text('Stock: ${ing.stockLevel} ${ing.unit}'),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (deleting)
+                            const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                          else ...[
+                            IconButton(
+                              icon: const Icon(Icons.edit, color: Colors.blue),
+                              onPressed: () => _showEditIngredientDialog(context, c, ing),
                             ),
-                          )
-                          : const SizedBox.shrink(),
-                ),
-              ],
-            ),
-            // Ingredients Tab
-            Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Obx(
-                    () => Row(
-                      children: [
-                        ElevatedButton(
-                          onPressed:
-                              c.savingIngredient.value
-                                  ? null
-                                  : () => _showAddIngredientDialog(context, c),
-                          child:
-                              c.savingIngredient.value
-                                  ? const SizedBox(
-                                    width: 18,
-                                    height: 18,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                    ),
-                                  )
-                                  : const Text('Add Ingredient'),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                Expanded(
-                  child: Obx(() {
-                    if (c.ingredientsLoading.value && c.ingredients.isEmpty) {
-                      return const Center(child: CircularProgressIndicator());
-                    }
-                    if (c.ingredients.isEmpty) {
-                      return const Center(child: Text('No ingredients yet'));
-                    }
-                    return ListView.separated(
-                      itemCount: c.ingredients.length,
-                      separatorBuilder: (_, __) => const Divider(height: 1),
-                      itemBuilder: (_, i) {
-                        final ing = c.ingredients[i];
-                        final deleting = c.deletingIngredientId.value == ing.id;
-                        return ListTile(
-                          title: Text(ing.name),
-                          subtitle: Text(
-                            'Stock: ${ing.stockLevel} ${ing.unit}',
-                          ),
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              if (deleting)
-                                const SizedBox(
-                                  width: 18,
-                                  height: 18,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                  ),
-                                )
-                              else ...[
-                                IconButton(
-                                  icon: const Icon(
-                                    Icons.edit,
-                                    color: Colors.blue,
-                                  ),
-                                  onPressed:
-                                      () => _showEditIngredientDialog(
-                                        context,
-                                        c,
-                                        ing,
-                                      ),
-                                ),
-                                IconButton(
-                                  icon: const Icon(
-                                    Icons.delete,
-                                    color: Colors.red,
-                                  ),
-                                  onPressed:
-                                      () => _confirmDeleteIngredient(
-                                        context,
-                                        c,
-                                        ing,
-                                      ),
-                                ),
-                              ],
-                            ],
-                          ),
-                        );
-                      },
+                            IconButton(
+                              icon: const Icon(Icons.delete, color: Colors.red),
+                              onPressed: () => _confirmDeleteIngredient(context, c, ing),
+                            ),
+                          ],
+                        ],
+                      ),
                     );
-                  }),
-                ),
-              ],
+                  },
+                );
+              }),
             ),
-          ],
-        ),
+          ]),
+        ]),
       ),
     );
   }
@@ -614,155 +508,87 @@ class MenuManagementScreen extends StatelessWidget {
 
     _showAnimatedDialog(
       context: context,
-      builder:
-          (_) => StatefulBuilder(
-            builder: (ctx, setState) {
-              return AlertDialog(
-                title: const Text('Add Meal'),
-                content: SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      TextField(
-                        controller: nameCtl,
-                        decoration: const InputDecoration(labelText: 'Name'),
-                      ),
-                      TextField(
-                        controller: priceCtl,
-                        decoration: const InputDecoration(labelText: 'Price'),
-                        keyboardType: TextInputType.numberWithOptions(
-                          decimal: true,
-                        ),
-                      ),
-                      TextField(
-                        controller: descCtl,
-                        decoration: const InputDecoration(
-                          labelText: 'Description',
-                        ),
-                      ),
-                      TextField(
-                        controller: imageCtl,
-                        decoration: InputDecoration(
-                          labelText: 'Image URL',
-                          suffixIcon: IconButton(
-                            icon: const Icon(Icons.photo_library),
-                            onPressed: () async {
-                              final picker = ImagePicker();
-                              final image = await picker.pickImage(
-                                source: ImageSource.gallery,
-                              );
-                              if (image != null) {
-                                imageCtl.text = image.path;
-                              }
-                            },
-                          ),
-                        ),
-                      ),
-                      DropdownButtonFormField<String>(
-                        value: selectedCat,
-                        items: [
-                          const DropdownMenuItem<String>(
-                            value: '',
-                            child: Text('Uncategorized'),
-                          ),
-                          ...c.categories
-                              .map(
-                                (e) => DropdownMenuItem<String>(
-                                  value: e.id,
-                                  child: Text(e.name),
-                                ),
-                              )
-                              .toList(),
-                        ],
-                        onChanged: (v) {
-                          setState(() {
-                            selectedCat = v ?? '';
-                          });
-                        },
-                        decoration: const InputDecoration(
-                          labelText: 'Category',
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      const Align(
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          'Ingredients:',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Wrap(
-                        spacing: 8,
-                        children:
-                            c.ingredients.map((ing) {
-                              final isSelected = selectedIngredients.contains(
-                                ing.id,
-                              );
-                              return FilterChip(
-                                label: Text(ing.name),
-                                selected: isSelected,
-                                onSelected: (v) {
-                                  setState(() {
-                                    if (v) {
-                                      selectedIngredients.add(ing.id);
-                                    } else {
-                                      selectedIngredients.remove(ing.id);
-                                    }
-                                  });
-                                },
-                              );
-                            }).toList(),
-                      ),
-                    ],
+      builder: (_) => StatefulBuilder(builder: (ctx, setState) {
+        return AlertDialog(
+          title: const Text('Add Meal'),
+          content: SingleChildScrollView(
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+              TextField(controller: nameCtl, decoration: const InputDecoration(labelText: 'Name')),
+              TextField(controller: priceCtl, decoration: const InputDecoration(labelText: 'Price'), keyboardType: TextInputType.numberWithOptions(decimal: true)),
+              TextField(controller: descCtl, decoration: const InputDecoration(labelText: 'Description')),
+              TextField(
+                controller: imageCtl,
+                decoration: InputDecoration(
+                  labelText: 'Image URL',
+                  suffixIcon: IconButton(
+                    icon: const Icon(Icons.photo_library),
+                    onPressed: () async {
+                      final picker = ImagePicker();
+                      final image = await picker.pickImage(source: ImageSource.gallery);
+                      if (image != null) {
+                        imageCtl.text = image.path;
+                      }
+                    },
                   ),
                 ),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: const Text('Cancel'),
-                  ),
-                  Obx(
-                    () => ElevatedButton(
-                      onPressed:
-                          c.savingMeal.value
-                              ? null
-                              : () async {
-                                final price =
-                                    double.tryParse(priceCtl.text.trim()) ?? 0;
-                                await c.addMeal(
-                                  name: nameCtl.text.trim(),
-                                  price: price,
-                                  description:
-                                      descCtl.text.trim().isEmpty
-                                          ? null
-                                          : descCtl.text.trim(),
-                                  imageUrl:
-                                      imageCtl.text.trim().isEmpty
-                                          ? null
-                                          : imageCtl.text.trim(),
-                                  categoryId:
-                                      selectedCat.isEmpty ? null : selectedCat,
-                                  ingredientIds: selectedIngredients.toList(),
-                                );
-                                if (context.mounted) Navigator.pop(context);
-                              },
-                      child:
-                          c.savingMeal.value
-                              ? const SizedBox(
-                                width: 18,
-                                height: 18,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
-                              )
-                              : const Text('Save'),
-                    ),
-                  ),
+              ),
+              DropdownButtonFormField<String>(
+                value: selectedCat,
+                items: [
+                  const DropdownMenuItem<String>(value: '', child: Text('Uncategorized')),
+                  ...c.categories.map((e) => DropdownMenuItem<String>(value: e.id, child: Text(e.name))).toList(),
                 ],
-              );
-            },
+                onChanged: (v) { setState(() { selectedCat = v ?? ''; }); },
+                decoration: const InputDecoration(labelText: 'Category'),
+              ),
+              const SizedBox(height: 16),
+              const Align(alignment: Alignment.centerLeft, child: Text('Ingredients:', style: TextStyle(fontWeight: FontWeight.bold))),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                children: c.ingredients.map((ing) {
+                  final isSelected = selectedIngredients.contains(ing.id);
+                  return FilterChip(
+                    label: Text(ing.name),
+                    selected: isSelected,
+                    onSelected: (v) {
+                      setState(() {
+                        if (v) {
+                          selectedIngredients.add(ing.id);
+                        } else {
+                          selectedIngredients.remove(ing.id);
+                        }
+                      });
+                    },
+                  );
+                }).toList(),
+              ),
+            ]),
           ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+            Obx(() => ElevatedButton(
+                  onPressed: c.savingMeal.value
+                      ? null
+                      : () async {
+                          final price = double.tryParse(priceCtl.text.trim()) ?? 0;
+                          await c.addMeal(
+                            name: nameCtl.text.trim(),
+                            price: price,
+                            description: descCtl.text.trim().isEmpty ? null : descCtl.text.trim(),
+                            imageUrl: imageCtl.text.trim().isEmpty ? null : imageCtl.text.trim(),
+                            categoryId: selectedCat.isEmpty ? null : selectedCat,
+                            ingredientIds: selectedIngredients.toList(),
+                          );
+                          if (context.mounted) Navigator.pop(context);
+                        },
+                  child: c.savingMeal.value
+                      ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                      : const Text('Save'),
+                )),
+          ],
+        );
+      }),
     );
   }
 
@@ -798,152 +624,100 @@ class MenuManagementScreen extends StatelessWidget {
                 });
               }
 
-              return AlertDialog(
-                title: const Text('Edit Meal'),
-                content: SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (m.imageUrl != null && m.imageUrl!.isNotEmpty)
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 16),
-                          child: Hero(
-                            tag: 'meal_${m.imageUrl}',
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(12),
-                              child: Image.network(
-                                m.imageUrl!,
-                                height: 120,
-                                width: double.infinity,
-                                fit: BoxFit.cover,
-                                errorBuilder:
-                                    (_, __, ___) => const SizedBox.shrink(),
-                              ),
-                            ),
-                          ),
-                        ),
-                      TextField(
-                        controller: nameCtl,
-                        decoration: const InputDecoration(labelText: 'Name'),
+        return AlertDialog(
+          title: const Text('Edit Meal'),
+          content: SingleChildScrollView(
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+              if (m.imageUrl != null && m.imageUrl!.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: Hero(
+                    tag: 'meal_${m.imageUrl}',
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: Image.network(
+                        m.imageUrl!,
+                        height: 120,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => const SizedBox.shrink(),
                       ),
-                      TextField(
-                        controller: priceCtl,
-                        decoration: const InputDecoration(labelText: 'Price'),
-                        keyboardType: TextInputType.numberWithOptions(
-                          decimal: true,
-                        ),
-                      ),
-                      TextField(
-                        controller: descCtl,
-                        decoration: const InputDecoration(
-                          labelText: 'Description',
-                        ),
-                      ),
-                      TextField(
-                        controller: imageCtl,
-                        decoration: InputDecoration(
-                          labelText: 'Image URL',
-                          suffixIcon: IconButton(
-                            icon: const Icon(Icons.photo_library),
-                            onPressed: () async {
-                              final picker = ImagePicker();
-                              final image = await picker.pickImage(
-                                source: ImageSource.gallery,
-                              );
-                              if (image != null) {
-                                imageCtl.text = image.path;
-                              }
-                            },
-                          ),
-                        ),
-                      ),
-                      DropdownButtonFormField<String>(
-                        value: selectedCat,
-                        items: [
-                          const DropdownMenuItem<String>(
-                            value: '',
-                            child: Text('Uncategorized'),
-                          ),
-                          ...c.categories
-                              .map(
-                                (e) => DropdownMenuItem<String>(
-                                  value: e.id,
-                                  child: Text(e.name),
-                                ),
-                              )
-                              .toList(),
-                        ],
-                        onChanged: (v) {
-                          setState(() {
-                            selectedCat = v ?? '';
-                          });
-                        },
-                        decoration: const InputDecoration(
-                          labelText: 'Category',
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      const Align(
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          'Ingredients:',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      if (!ingredientsLoaded)
-                        const Center(child: CircularProgressIndicator())
-                      else
-                        Wrap(
-                          spacing: 8,
-                          children:
-                              c.ingredients.map((ing) {
-                                final isSelected = selectedIngredients.contains(
-                                  ing.id,
-                                );
-                                return FilterChip(
-                                  label: Text(ing.name),
-                                  selected: isSelected,
-                                  onSelected: (v) {
-                                    setState(() {
-                                      if (v) {
-                                        selectedIngredients.add(ing.id);
-                                      } else {
-                                        selectedIngredients.remove(ing.id);
-                                      }
-                                    });
-                                  },
-                                );
-                              }).toList(),
-                        ),
-                    ],
+                    ),
                   ),
                 ),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: const Text('Cancel'),
-                  ),
-                  ElevatedButton(
+              TextField(controller: nameCtl, decoration: const InputDecoration(labelText: 'Name')),
+              TextField(controller: priceCtl, decoration: const InputDecoration(labelText: 'Price'), keyboardType: TextInputType.numberWithOptions(decimal: true)),
+              TextField(controller: descCtl, decoration: const InputDecoration(labelText: 'Description')),
+              TextField(
+                controller: imageCtl,
+                decoration: InputDecoration(
+                  labelText: 'Image URL',
+                  suffixIcon: IconButton(
+                    icon: const Icon(Icons.photo_library),
                     onPressed: () async {
-                      final price = double.tryParse(priceCtl.text.trim());
-                      await c.updateMeal(
-                        m,
-                        name: nameCtl.text.trim(),
-                        price: price,
-                        description: descCtl.text.trim(),
-                        imageUrl: imageCtl.text.trim(),
-                        categoryId: selectedCat.isEmpty ? null : selectedCat,
-                        ingredientIds: selectedIngredients.toList(),
-                      );
-                      Navigator.pop(context);
+                      final picker = ImagePicker();
+                      final image = await picker.pickImage(source: ImageSource.gallery);
+                      if (image != null) {
+                        imageCtl.text = image.path;
+                      }
                     },
-                    child: const Text('Save'),
                   ),
+                ),
+              ),
+              DropdownButtonFormField<String>(
+                value: selectedCat,
+                items: [
+                  const DropdownMenuItem<String>(value: '', child: Text('Uncategorized')),
+                  ...c.categories.map((e) => DropdownMenuItem<String>(value: e.id, child: Text(e.name))).toList(),
                 ],
-              );
-            },
+                onChanged: (v) { setState(() { selectedCat = v ?? ''; }); },
+                decoration: const InputDecoration(labelText: 'Category'),
+              ),
+              const SizedBox(height: 16),
+              const Align(alignment: Alignment.centerLeft, child: Text('Ingredients:', style: TextStyle(fontWeight: FontWeight.bold))),
+              const SizedBox(height: 8),
+              if (!ingredientsLoaded)
+                const Center(child: CircularProgressIndicator())
+              else
+                Wrap(
+                  spacing: 8,
+                  children: c.ingredients.map((ing) {
+                    final isSelected = selectedIngredients.contains(ing.id);
+                    return FilterChip(
+                      label: Text(ing.name),
+                      selected: isSelected,
+                      onSelected: (v) {
+                        setState(() {
+                          if (v) {
+                            selectedIngredients.add(ing.id);
+                          } else {
+                            selectedIngredients.remove(ing.id);
+                          }
+                        });
+                      },
+                    );
+                  }).toList(),
+                ),
+            ]),
           ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+            ElevatedButton(onPressed: () async {
+              final price = double.tryParse(priceCtl.text.trim());
+              await c.updateMeal(
+                m,
+                name: nameCtl.text.trim(),
+                price: price,
+                description: descCtl.text.trim(),
+                imageUrl: imageCtl.text.trim(),
+                categoryId: selectedCat.isEmpty ? null : selectedCat,
+                ingredientIds: selectedIngredients.toList(),
+              );
+              Navigator.pop(context);
+            }, child: const Text('Save')),
+          ],
+        );
+      }),
     );
   }
 
@@ -1061,6 +835,7 @@ final categoryPalette = {
   'Appetizers': Colors.orange,
   'Main Courses': Colors.blue,
   'Drinks': Colors.green,
+  'Desserts': Colors.pink,
   'Desserts': Colors.pink,
 };
 Color _categoryColor(String name) {

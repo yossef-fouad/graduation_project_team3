@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:get/get.dart';
 import 'package:order_pad/models/category.dart';
 import 'package:order_pad/models/meal_item.dart';
@@ -284,5 +285,8 @@ class MenuManagementController extends GetxController {
   void setCategoryFilter(String? id) {
     selectedCategoryId.value = id ?? '';
     fetchMeals(reset: true);
+  }
+  Future<String?> uploadImage(String path) async {
+    return await _service.uploadImage(File(path));
   }
 }

@@ -24,7 +24,7 @@ class Review {
       'meal_id': mealId,
       'rating': rating,
       'comment': comment,
-      // 'ingredient_ratings': ingredientRatings, // TODO: Add column to DB
+      'ingredient_ratings': ingredientRatings,
     };
   }
 
@@ -35,7 +35,7 @@ class Review {
       mealId: map['meal_id'] as String,
       rating: (map['rating'] as num).toInt(),
       comment: map['comment'] as String?,
-      // ingredientRatings: Map<String, double>.from(map['ingredient_ratings'] ?? {}),
+      ingredientRatings: Map<String, double>.from(map['ingredient_ratings'] ?? {}),
       createdAt: map['created_at'] != null ? DateTime.parse(map['created_at'] as String) : null,
     );
   }

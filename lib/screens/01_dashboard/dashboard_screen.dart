@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:order_pad/models/meal_item.dart';
 import 'package:order_pad/screens/01_dashboard/dashboard_controller.dart';
-import 'package:order_pad/screens/main_navigation_screen.dart';
+import 'package:order_pad/screens/02_new_order/home_page.dart';
 import 'package:order_pad/screens/03_active_orders/active_orders_screen.dart';
 import 'package:order_pad/widgets/colors.dart';
 import '../05_menu_management/menu_management_screen.dart';
+import '../06_feedback/feedback_screen.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
@@ -47,7 +49,7 @@ class DashboardScreen extends StatelessWidget {
               onTap: () {
                 Get.back();
                 // Navigate to New Order
-                Get.to(() => const MainNavigationScreen());
+                 Get.toNamed('/new_order'); // Assuming route or just use class
               },
             ),
             ListTile(
@@ -55,7 +57,12 @@ class DashboardScreen extends StatelessWidget {
               title: const Text('Order History'),
               onTap: () {
                 Get.back();
-                // Navigate to History
+                Get.to(
+                  () => const OrderHistoryScreen(),
+                  transition: Transition.rightToLeft,
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeOutQuart,
+                );
               },
             ),
             ListTile(
@@ -63,7 +70,7 @@ class DashboardScreen extends StatelessWidget {
               title: const Text('Menu Management'),
               onTap: () {
                 Get.to(MenuManagementScreen());
-                // Navigate to Menu Management
+                 // Navigate to Menu Management
               },
             ),
           ],
@@ -123,10 +130,25 @@ class DashboardScreen extends StatelessWidget {
               const SizedBox(height: 16),
               Expanded(
                 child: Obx(() {
-                  if (c.isLoading.value && c.topSellingMeals.isEmpty) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-                  if (c.topSellingMeals.isEmpty) {
+                  final isLoading = c.isLoading.value && c.topSellingMeals.isEmpty;
+                  final list = isLoading
+                      ? List.generate(
+                          6,
+                          (i) => TopSellingMeal(
+                            meal: MealItem(
+                              id: 'dummy_$i',
+                              name: 'Meal Name Placeholder',
+                              price: 99.99,
+                              isAvailable: true,
+                              imageUrl: '',
+                            ),
+                            count: 100,
+                            categoryName: 'Category Name',
+                          ),
+                        )
+                      : c.topSellingMeals;
+
+                  if (!isLoading && c.topSellingMeals.isEmpty) {
                     return const Center(
                       child: Text(
                         'No sales data available yet.',
@@ -146,26 +168,20 @@ class DashboardScreen extends StatelessWidget {
                       return false;
                     },
                     child: ListView.separated(
-                      itemCount:
-                          c.topSellingMeals.length +
-                          (c.isMoreLoading.value ? 1 : 0),
+                      itemCount: c.topSellingMeals.length + (c.isMoreLoading.value ? 1 : 0),
                       separatorBuilder: (_, __) => const SizedBox(height: 12),
                       itemBuilder: (_, i) {
                         if (i == c.topSellingMeals.length) {
-                          return const Center(
-                            child: Padding(
-                              padding: EdgeInsets.all(8.0),
-                              child: CircularProgressIndicator(),
-                            ),
-                          );
+                          return const Center(child: Padding(
+                            padding: EdgeInsets.all(8.0),
+                            child: CircularProgressIndicator(),
+                          ));
                         }
                         final item = c.topSellingMeals[i];
-
+                        
                         return Card(
                           elevation: 2,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           child: ListTile(
                             contentPadding: const EdgeInsets.all(12),
                             leading: Container(
@@ -174,45 +190,27 @@ class DashboardScreen extends StatelessWidget {
                               decoration: BoxDecoration(
                                 color: Colors.grey.shade200,
                                 borderRadius: BorderRadius.circular(8),
-                                image:
-                                    item.meal.imageUrl != null &&
-                                            item.meal.imageUrl!.isNotEmpty
-                                        ? DecorationImage(
-                                          image: NetworkImage(
-                                            item.meal.imageUrl!,
-                                          ),
-                                          fit: BoxFit.cover,
-                                        )
-                                        : null,
+                                image: item.meal.imageUrl != null && item.meal.imageUrl!.isNotEmpty
+                                    ? DecorationImage(image: NetworkImage(item.meal.imageUrl!), fit: BoxFit.cover)
+                                    : null,
                               ),
-                              child:
-                                  item.meal.imageUrl == null ||
-                                          item.meal.imageUrl!.isEmpty
-                                      ? const Icon(
-                                        Icons.fastfood,
-                                        color: Colors.grey,
-                                      )
-                                      : null,
+                              child: item.meal.imageUrl == null || item.meal.imageUrl!.isEmpty
+                                  ? const Icon(Icons.fastfood, color: Colors.grey)
+                                  : null,
                             ),
                             title: Row(
                               children: [
                                 Expanded(
                                   child: Text(
                                     item.meal.name,
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 16,
-                                    ),
+                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
                                 if (item.categoryName != null)
                                   Container(
                                     margin: const EdgeInsets.only(left: 8),
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 8,
-                                      vertical: 2,
-                                    ),
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                                     decoration: BoxDecoration(
                                       color: Colors.grey.shade200,
                                       borderRadius: BorderRadius.circular(4),
@@ -246,10 +244,7 @@ class DashboardScreen extends StatelessWidget {
                                 ),
                                 const Text(
                                   'Sold',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.grey,
-                                  ),
+                                  style: TextStyle(fontSize: 12, color: Colors.grey),
                                 ),
                               ],
                             ),
