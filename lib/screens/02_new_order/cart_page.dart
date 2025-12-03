@@ -21,11 +21,9 @@ class CartPage extends StatelessWidget {
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () {
-            print('🟢 Back button pressed');
             if (Navigator.of(context).canPop()) {
               Navigator.of(context).pop();
             } else {
-              print('🟢 Cannot pop, navigating to MainNavigationScreen');
               Get.offAll(() => const MainNavigationScreen());
             }
           },
@@ -274,95 +272,52 @@ class CartPage extends StatelessWidget {
                       width: double.infinity,
                       child: ElevatedButton(
                         onPressed: () async {
-                          print('🟢 [CartPage] Submit Order button pressed');
-                          print(
-                            '🟢 [CartPage] Total items: ${controller.totalItems}',
-                          );
-                          print(
-                            '🟢 [CartPage] Total amount: \$${controller.totalAmount.toStringAsFixed(2)}',
-                          );
-
                           await showCustomerPhoneBottomSheet(
                             context: context,
                             onSubmit: (phoneNumber) async {
                               try {
-                                print(
-                                  '🟢 [CartPage] Phone number entered: $phoneNumber',
-                                );
-                                print('🟢 [CartPage] Preparing cart items...');
-
                                 final cartItems = controller.getCartItemsMap();
-                                print(
-                                  '🟢 [CartPage] Cart items prepared: ${cartItems.length} items',
-                                );
 
                                 // Submit order
-                                print(
-                                  '🟢 [CartPage] Calling OrderService.submitOrder...',
-                                );
-                                final orderId = await OrderService.submitOrder(
+                                await OrderService.submitOrder(
                                   customerPhone: phoneNumber,
                                   totalPrice: controller.totalAmount,
                                   items: cartItems,
                                 );
 
-                                print(
-                                  '🟢 [CartPage] Order submitted successfully! Order ID: $orderId',
-                                );
-
                                 // Close bottom sheet
-                                Navigator.of(context).pop();
+                                Get.back();
 
                                 // Clear cart
-                                print('🟢 [CartPage] Clearing cart...');
                                 controller.clearCart();
 
                                 // Show success message
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Row(
-                                      children: [
-                                        Icon(
-                                          Icons.check_circle,
-                                          color: Colors.white,
-                                        ),
-                                        SizedBox(width: 12),
-                                        Expanded(
-                                          child: Text(
-                                            'Order submitted successfully!',
-                                            style: TextStyle(fontSize: 16),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    backgroundColor: AppColors.primary,
-                                    duration: Duration(seconds: 3),
+                                Get.snackbar(
+                                  'Success',
+                                  'Order submitted successfully!',
+                                  icon: Icon(
+                                    Icons.check_circle,
+                                    color: Colors.white,
                                   ),
+                                  backgroundColor: AppColors.primary,
+                                  colorText: Colors.white,
+                                  duration: Duration(seconds: 3),
+                                  snackPosition: SnackPosition.BOTTOM,
+                                  margin: EdgeInsets.all(16),
                                 );
 
                                 // Navigate back
-                                Navigator.of(context).pop();
-                                print(
-                                  '🟢 [CartPage] Order submission flow completed',
-                                );
+                                Get.back();
                               } catch (e) {
-                                print(
-                                  '🔴 [CartPage] Error during order submission: $e',
-                                );
-                                print(
-                                  '🔴 [CartPage] Error type: ${e.runtimeType}',
-                                );
-
                                 // Show error
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      'Error: ${e.toString()}',
-                                      style: TextStyle(color: Colors.white),
-                                    ),
-                                    backgroundColor: AppColors.error,
-                                    duration: Duration(seconds: 3),
-                                  ),
+                                Get.snackbar(
+                                  'Error',
+                                  e.toString(),
+                                  backgroundColor: AppColors.error,
+                                  colorText: Colors.white,
+                                  duration: Duration(seconds: 3),
+                                  snackPosition: SnackPosition.BOTTOM,
+                                  margin: EdgeInsets.all(16),
                                 );
                               }
                             },

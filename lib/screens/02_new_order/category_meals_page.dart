@@ -1,35 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:get/get.dart';
+import 'package:order_pad/controllers/category_meals_controller.dart';
 import 'package:order_pad/models/category.dart';
 import 'package:order_pad/models/meal_item.dart';
-import 'package:order_pad/screens/02_new_order/cart_page.dart';
 import 'package:order_pad/services/cart_controller.dart';
-import 'package:order_pad/services/categories_service.dart';
 import 'package:order_pad/widgets/animated_cart_badge.dart';
 import 'package:order_pad/widgets/colors.dart';
 
-class CategoryMealsPage extends StatefulWidget {
+class CategoryMealsPage extends StatelessWidget {
   final Category category;
 
   const CategoryMealsPage({super.key, required this.category});
 
   @override
-  State<CategoryMealsPage> createState() => _CategoryMealsPageState();
-}
-
-class _CategoryMealsPageState extends State<CategoryMealsPage> {
-  late Future<List<MealItem>> _mealsFuture;
-  final CartController cartController = Get.put(CartController());
-
-  @override
-  void initState() {
-    super.initState();
-    _mealsFuture = CategoriesService.fetchMealsByCategory(widget.category.id);
-  }
-
-  @override
   Widget build(BuildContext context) {
+    // Use tag to allow multiple instances for different categories if needed
+    final CategoryMealsController controller = Get.put(
+      CategoryMealsController(category.id),
+      tag: category.id,
+    );
+    Get.put(CartController());
+
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
@@ -37,7 +29,7 @@ class _CategoryMealsPageState extends State<CategoryMealsPage> {
         foregroundColor: Colors.white,
         elevation: 0,
         title: Text(
-          widget.category.name,
+          category.name,
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22),
         ),
         centerTitle: true,
@@ -47,124 +39,111 @@ class _CategoryMealsPageState extends State<CategoryMealsPage> {
           SizedBox(width: 8),
         ],
       ),
-      body: FutureBuilder<List<MealItem>>(
-        future: _mealsFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  CircularProgressIndicator(color: AppColors.primary),
-                  SizedBox(height: 16),
-                  Text(
-                    'Loading meals...',
-                    style: TextStyle(color: Colors.grey.shade600, fontSize: 16),
-                  ),
-                ],
-              ),
-            );
-          }
-
-          if (snapshot.hasError) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.error_outline, size: 64, color: AppColors.error),
-                  SizedBox(height: 16),
-                  Text(
-                    'Error loading meals',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.grey.shade800,
-                    ),
-                  ),
-                  SizedBox(height: 8),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 32),
-                    child: Text(
-                      snapshot.error.toString(),
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: Colors.grey.shade600,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: 24),
-                  ElevatedButton.icon(
-                    onPressed: () {
-                      setState(() {
-                        _mealsFuture = CategoriesService.fetchMealsByCategory(
-                          widget.category.id,
-                        );
-                      });
-                    },
-                    icon: Icon(Icons.refresh),
-                    label: Text('Retry'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: Colors.white,
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 24,
-                        vertical: 12,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }
-
-          final meals = snapshot.data ?? [];
-
-          if (meals.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.restaurant_menu,
-                    size: 80,
-                    color: Colors.grey.shade300,
-                  ),
-                  SizedBox(height: 16),
-                  Text(
-                    'No meals available',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.grey.shade600,
-                    ),
-                  ),
-                  SizedBox(height: 8),
-                  Text(
-                    'Check back later for new items',
-                    style: TextStyle(color: Colors.grey.shade500, fontSize: 14),
-                  ),
-                ],
-              ),
-            );
-          }
-
-          return GridView.builder(
-            padding: EdgeInsets.all(16),
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              childAspectRatio: 0.65,
-              crossAxisSpacing: 16,
-              mainAxisSpacing: 16,
+      body: Obx(() {
+        if (controller.isLoading.value) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                CircularProgressIndicator(color: AppColors.primary),
+                SizedBox(height: 16),
+                Text(
+                  'Loading meals...',
+                  style: TextStyle(color: Colors.grey.shade600, fontSize: 16),
+                ),
+              ],
             ),
-            itemCount: meals.length,
-            itemBuilder: (context, index) {
-              final meal = meals[index];
-              return _MealCard(meal: meal);
-            },
           );
-        },
-      ),
+        }
+
+        if (controller.error.isNotEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.error_outline, size: 64, color: AppColors.error),
+                SizedBox(height: 16),
+                Text(
+                  'Error loading meals',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey.shade800,
+                  ),
+                ),
+                SizedBox(height: 8),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 32),
+                  child: Text(
+                    controller.error.value,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
+                  ),
+                ),
+                SizedBox(height: 24),
+                ElevatedButton.icon(
+                  onPressed: () {
+                    controller.fetchMeals();
+                  },
+                  icon: Icon(Icons.refresh),
+                  label: Text('Retry'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+
+        final meals = controller.meals;
+
+        if (meals.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.restaurant_menu,
+                  size: 80,
+                  color: Colors.grey.shade300,
+                ),
+                SizedBox(height: 16),
+                Text(
+                  'No meals available',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey.shade600,
+                  ),
+                ),
+                SizedBox(height: 8),
+                Text(
+                  'Check back later for new items',
+                  style: TextStyle(color: Colors.grey.shade500, fontSize: 14),
+                ),
+              ],
+            ),
+          );
+        }
+
+        return GridView.builder(
+          padding: EdgeInsets.all(16),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            childAspectRatio: 0.65,
+            crossAxisSpacing: 16,
+            mainAxisSpacing: 16,
+          ),
+          itemCount: meals.length,
+          itemBuilder: (context, index) {
+            final meal = meals[index];
+            return _MealCard(meal: meal);
+          },
+        );
+      }),
     );
   }
 }
@@ -178,7 +157,8 @@ class _MealCard extends StatefulWidget {
   State<_MealCard> createState() => _MealCardState();
 }
 
-class _MealCardState extends State<_MealCard> with SingleTickerProviderStateMixin {
+class _MealCardState extends State<_MealCard>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
 
@@ -189,9 +169,10 @@ class _MealCardState extends State<_MealCard> with SingleTickerProviderStateMixi
       vsync: this,
       duration: const Duration(milliseconds: 150),
     );
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.8).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
+    _scaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: 0.8,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
   }
 
   @override
@@ -231,7 +212,8 @@ class _MealCardState extends State<_MealCard> with SingleTickerProviderStateMixi
             child: ClipRRect(
               borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
               child:
-                  widget.meal.imageUrl != null && widget.meal.imageUrl!.isNotEmpty
+                  widget.meal.imageUrl != null &&
+                          widget.meal.imageUrl!.isNotEmpty
                       ? CachedNetworkImage(
                         imageUrl: widget.meal.imageUrl!,
                         fit: BoxFit.cover,
@@ -284,7 +266,8 @@ class _MealCardState extends State<_MealCard> with SingleTickerProviderStateMixi
                   SizedBox(height: 4),
 
                   // Description
-                  if (widget.meal.description != null && widget.meal.description!.isNotEmpty)
+                  if (widget.meal.description != null &&
+                      widget.meal.description!.isNotEmpty)
                     Expanded(
                       child: Text(
                         widget.meal.description!,
@@ -322,7 +305,9 @@ class _MealCardState extends State<_MealCard> with SingleTickerProviderStateMixi
                                 controller.addToCart(widget.meal);
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
-                                    content: Text('${widget.meal.name} added to cart'),
+                                    content: Text(
+                                      '${widget.meal.name} added to cart',
+                                    ),
                                     duration: Duration(seconds: 1),
                                     backgroundColor: AppColors.primary,
                                   ),
@@ -338,7 +323,9 @@ class _MealCardState extends State<_MealCard> with SingleTickerProviderStateMixi
                                     borderRadius: BorderRadius.circular(8),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: AppColors.primary.withOpacity(0.3),
+                                        color: AppColors.primary.withOpacity(
+                                          0.3,
+                                        ),
                                         blurRadius: 4,
                                         offset: Offset(0, 2),
                                       ),

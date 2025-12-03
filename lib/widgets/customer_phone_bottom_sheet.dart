@@ -1,46 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:get/get.dart';
+import 'package:order_pad/controllers/customer_phone_controller.dart';
 import 'package:order_pad/widgets/colors.dart';
 
-class CustomerPhoneBottomSheet extends StatefulWidget {
+class CustomerPhoneBottomSheet extends StatelessWidget {
   final Function(String phoneNumber) onSubmit;
 
   const CustomerPhoneBottomSheet({super.key, required this.onSubmit});
 
   @override
-  State<CustomerPhoneBottomSheet> createState() =>
-      _CustomerPhoneBottomSheetState();
-}
-
-class _CustomerPhoneBottomSheetState extends State<CustomerPhoneBottomSheet> {
-  final TextEditingController _phoneController = TextEditingController();
-  final _formKey = GlobalKey<FormState>();
-  bool _isLoading = false;
-
-  @override
-  void dispose() {
-    _phoneController.dispose();
-    super.dispose();
-  }
-
-  void _handleSubmit() async {
-    if (_formKey.currentState!.validate()) {
-      setState(() => _isLoading = true);
-
-      try {
-        await widget.onSubmit(_phoneController.text.trim());
-      } catch (e) {
-        // Error handled by parent
-      } finally {
-        if (mounted) {
-          setState(() => _isLoading = false);
-        }
-      }
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
+    final CustomerPhoneController controller = Get.put(
+      CustomerPhoneController(),
+    );
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -62,7 +36,7 @@ class _CustomerPhoneBottomSheetState extends State<CustomerPhoneBottomSheet> {
             bottom: MediaQuery.of(context).viewInsets.bottom + 24,
           ),
           child: Form(
-            key: _formKey,
+            key: controller.formKey,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -121,7 +95,7 @@ class _CustomerPhoneBottomSheetState extends State<CustomerPhoneBottomSheet> {
 
                 // Phone input field
                 TextFormField(
-                  controller: _phoneController,
+                  controller: controller.phoneController,
                   autofocus: true,
                   keyboardType: TextInputType.phone,
                   inputFormatters: [FilteringTextInputFormatter.digitsOnly],
@@ -170,59 +144,71 @@ class _CustomerPhoneBottomSheetState extends State<CustomerPhoneBottomSheet> {
                 SizedBox(height: 24),
 
                 // Submit button
-                ElevatedButton(
-                  onPressed: _isLoading ? null : _handleSubmit,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
-                    padding: EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                Obx(
+                  () => ElevatedButton(
+                    onPressed:
+                        controller.isLoading.value
+                            ? null
+                            : () => controller.submit(onSubmit),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                      padding: EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 2,
+                      disabledBackgroundColor: AppColors.primary.withOpacity(
+                        0.5,
+                      ),
                     ),
-                    elevation: 2,
-                    disabledBackgroundColor: AppColors.primary.withOpacity(0.5),
-                  ),
-                  child:
-                      _isLoading
-                          ? SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                Colors.white,
-                              ),
-                            ),
-                          )
-                          : Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.check_circle, size: 20),
-                              SizedBox(width: 8),
-                              Text(
-                                'Submit Order',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
+                    child:
+                        controller.isLoading.value
+                            ? SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Colors.white,
                                 ),
                               ),
-                            ],
-                          ),
+                            )
+                            : Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.check_circle, size: 20),
+                                SizedBox(width: 8),
+                                Text(
+                                  'Submit Order',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                  ),
                 ),
 
                 SizedBox(height: 12),
 
                 // Cancel button
-                TextButton(
-                  onPressed:
-                      _isLoading ? null : () => Navigator.of(context).pop(),
-                  style: TextButton.styleFrom(
-                    foregroundColor: Colors.grey.shade700,
-                    padding: EdgeInsets.symmetric(vertical: 16),
-                  ),
-                  child: Text(
-                    'Cancel',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                Obx(
+                  () => TextButton(
+                    onPressed:
+                        controller.isLoading.value ? null : () => Get.back(),
+                    style: TextButton.styleFrom(
+                      foregroundColor: Colors.grey.shade700,
+                      padding: EdgeInsets.symmetric(vertical: 16),
+                    ),
+                    child: Text(
+                      'Cancel',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
                   ),
                 ),
               ],
