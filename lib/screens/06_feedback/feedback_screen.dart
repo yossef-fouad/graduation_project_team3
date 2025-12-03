@@ -49,6 +49,8 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
             ingredientRatings: _ingredientRatings[meal.id] ?? {},
             createdAt: DateTime.now(),
           );
+          // DATA FLOW: This is where the review data is sent to the backend.
+          // The ReviewService.submitReview method inserts the review object into the 'reviews' table in Supabase.
           await _reviewService.submitReview(review);
         }
       }

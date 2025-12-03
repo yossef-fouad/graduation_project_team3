@@ -13,4 +13,18 @@ class ReviewService {
       rethrow;
     }
   }
+
+  Future<List<Review>> getReviewsForOrder(String orderId) async {
+    try {
+      final res = await _client
+          .from('reviews')
+          .select('*, meals(name)')
+          .eq('order_id', orderId);
+      
+      return (res as List).map((e) => Review.fromMap(e)).toList();
+    } catch (e) {
+      print('Error fetching reviews for order $orderId: $e');
+      rethrow;
+    }
+  }
 }

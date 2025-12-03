@@ -60,4 +60,25 @@ class DashboardService {
       );
     }).toList();
   }
+
+  Future<Map<String, double>> getDashboardStats() async {
+    // Fetch all sales data to aggregate
+    // Note: In a production app with large data, this aggregation should be done on the server (RPC or View).
+    final res = await cloud.from('view_meal_sales').select();
+    
+    double totalSales = 0;
+    double totalRevenue = 0;
+
+    for (var e in (res as List)) {
+      final count = (e['total_sold'] as num).toInt();
+      final price = (e['meal_price'] as num).toDouble();
+      totalSales += count;
+      totalRevenue += count * price;
+    }
+
+    return {
+      'totalSales': totalSales,
+      'totalRevenue': totalRevenue,
+    };
+  }
 }

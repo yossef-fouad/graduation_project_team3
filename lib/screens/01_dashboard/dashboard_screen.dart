@@ -12,6 +12,7 @@ import '../06_feedback/feedback_screen.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:order_pad/screens/role_selection_screen.dart';
+import 'package:order_pad/screens/07_reviews/order_selection_screen.dart';
 
 
 class DashboardScreen extends StatelessWidget {
@@ -91,16 +92,54 @@ class DashboardScreen extends StatelessWidget {
                  // Navigate to Menu Management
               },
             ),
+            ListTile(
+              leading: const Icon(Icons.rate_review),
+              title: const Text('Order Reviews'),
+              onTap: () {
+                Get.back();
+                Get.to(() => const OrderSelectionScreen());
+              },
+            ),
           ],
         ),
       ),
       body: RefreshIndicator(
-        onRefresh: () => c.fetchTopSellingMeals(),
+        onRefresh: () async {
+          c.fetchTopSellingMeals(refresh: true);
+          c.fetchDashboardStats();
+        },
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Stats Cards
+              Padding(
+                padding: const EdgeInsets.only(bottom: 24.0),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Obx(() => _buildStatCard(
+                            title: 'Total Sales',
+                            value: c.totalSales.value.toInt().toString(),
+                            icon: Icons.shopping_cart,
+                            color: Colors.blue,
+                            isLoading: c.isLoading.value,
+                          )),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Obx(() => _buildStatCard(
+                            title: 'Total Revenue',
+                            value: '\$${c.totalRevenue.value.toStringAsFixed(2)}',
+                            icon: Icons.attach_money,
+                            color: AppColors.primary,
+                            isLoading: c.isLoading.value,
+                          )),
+                    ),
+                  ],
+                ),
+              ),
               const Text(
                 'Top Selling Meals',
                 style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
@@ -279,6 +318,63 @@ class DashboardScreen extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildStatCard({
+    required String title,
+    required String value,
+    required IconData icon,
+    required Color color,
+    required bool isLoading,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, color: color, size: 24),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            title,
+            style: TextStyle(
+              color: Colors.grey[600],
+              fontSize: 14,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Skeletonizer(
+            enabled: isLoading,
+            child: Text(
+              value,
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

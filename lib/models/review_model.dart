@@ -4,6 +4,7 @@ class Review {
   final String mealId;
   final int rating;
   final String? comment;
+  final String? mealName;
   final Map<String, double> ingredientRatings;
   final DateTime? createdAt;
 
@@ -13,6 +14,7 @@ class Review {
     required this.mealId,
     required this.rating,
     this.comment,
+    this.mealName,
     this.ingredientRatings = const {},
     this.createdAt,
   });
@@ -29,12 +31,18 @@ class Review {
   }
 
   factory Review.fromMap(Map<String, dynamic> map) {
+    String? extractedMealName;
+    if (map['meals'] != null && map['meals'] is Map) {
+      extractedMealName = map['meals']['name'];
+    }
+
     return Review(
       id: map['id'] as String?,
       orderId: map['order_id'] as String,
       mealId: map['meal_id'] as String,
       rating: (map['rating'] as num).toInt(),
       comment: map['comment'] as String?,
+      mealName: extractedMealName,
       ingredientRatings: Map<String, double>.from(map['ingredient_ratings'] ?? {}),
       createdAt: map['created_at'] != null ? DateTime.parse(map['created_at'] as String) : null,
     );

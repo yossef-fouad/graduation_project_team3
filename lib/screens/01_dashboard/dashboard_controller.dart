@@ -9,6 +9,9 @@ class DashboardController extends GetxController {
   final isLoading = true.obs;
   final isMoreLoading = false.obs;
   
+  final totalSales = 0.0.obs;
+  final totalRevenue = 0.0.obs;
+  
   int _page = 0;
   final int _pageSize = 10;
   bool hasMore = true;
@@ -21,6 +24,17 @@ class DashboardController extends GetxController {
     super.onInit();
     fetchCategories();
     fetchTopSellingMeals(refresh: true);
+    fetchDashboardStats();
+  }
+
+  Future<void> fetchDashboardStats() async {
+    try {
+      final stats = await _service.getDashboardStats();
+      totalSales.value = stats['totalSales'] ?? 0;
+      totalRevenue.value = stats['totalRevenue'] ?? 0;
+    } catch (e) {
+      print('Error fetching dashboard stats: $e');
+    }
   }
 
   Future<void> fetchCategories() async {
