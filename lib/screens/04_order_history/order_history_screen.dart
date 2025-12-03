@@ -5,6 +5,8 @@ import 'package:order_pad/screens/04_order_history/order_history_service.dart';
 import 'package:order_pad/screens/06_feedback/feedback_screen.dart';
 import 'package:order_pad/widgets/colors.dart';
 
+import 'package:skeletonizer/skeletonizer.dart';
+
 class OrderHistoryController extends GetxController {
   final OrderHistoryService _service = OrderHistoryService();
   final orders = <Order>[].obs;
@@ -62,67 +64,79 @@ class OrderHistoryScreen extends StatelessWidget {
         centerTitle: true,
       ),
       body: Obx(() {
-        if (controller.isLoading.value) {
-          return const Center(child: CircularProgressIndicator());
-        }
+        final isLoading = controller.isLoading.value && controller.orders.isEmpty;
+        final list = isLoading
+            ? List.generate(
+                6,
+                (i) => Order(
+                  id: 'dummy_order_$i',
+                  createdAt: DateTime.now(),
+                  totalAmount: 123.45,
+                  status: 'Completed',
+                ),
+              )
+            : controller.orders;
 
-        if (controller.orders.isEmpty) {
+        if (!isLoading && controller.orders.isEmpty) {
           return const Center(child: Text('No completed orders found.'));
         }
 
-        return ListView.separated(
-          padding: const EdgeInsets.all(16),
-          itemCount: controller.orders.length,
-          separatorBuilder: (_, __) => const SizedBox(height: 12),
-          itemBuilder: (context, index) {
-            final order = controller.orders[index];
-            final isDone = order.status == 'Completed';
-            return Card(
-              elevation: 2,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              child: ListTile(
-                contentPadding: const EdgeInsets.all(16),
-                title: Text(
-                  'Order #${order.id.substring(0, 8)}...', // Shorten ID
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                ),
-                subtitle: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 4),
-                    Text('Date: ${order.createdAt.toString().split('.')[0]}'),
-                    Text('Total: \$${order.totalAmount.toStringAsFixed(2)}'),
-                    const SizedBox(height: 4),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: isDone ? Colors.green.withValues(alpha: 0.1) : Colors.red.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        order.status.toUpperCase(),
-                        style: TextStyle(
-                          color: isDone ? Colors.green : Colors.red,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
+        return Skeletonizer(
+          enabled: isLoading,
+          child: ListView.separated(
+            padding: const EdgeInsets.all(16),
+            itemCount: list.length,
+            separatorBuilder: (_, __) => const SizedBox(height: 12),
+            itemBuilder: (context, index) {
+              final order = list[index];
+              final isDone = order.status == 'Completed';
+              return Card(
+                elevation: 2,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                child: ListTile(
+                  contentPadding: const EdgeInsets.all(16),
+                  title: Text(
+                    'Order #${order.id.length > 8 ? order.id.substring(0, 8) : order.id}...', // Shorten ID
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 4),
+                      Text('Date: ${order.createdAt.toString().split('.')[0]}'),
+                      Text('Total: \$${order.totalAmount.toStringAsFixed(2)}'),
+                      const SizedBox(height: 4),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: isDone ? Colors.green.withValues(alpha: 0.1) : Colors.red.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          order.status.toUpperCase(),
+                          style: TextStyle(
+                            color: isDone ? Colors.green : Colors.red,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
+                  trailing: isDone
+                      ? ElevatedButton(
+                          onPressed: () => controller.rateOrder(order.id),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            foregroundColor: Colors.white,
+                          ),
+                          child: const Text('Rate'),
+                        )
+                      : null,
                 ),
-                trailing: isDone
-                    ? ElevatedButton(
-                        onPressed: () => controller.rateOrder(order.id),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          foregroundColor: Colors.white,
-                        ),
-                        child: const Text('Rate'),
-                      )
-                    : null,
-              ),
-            );
-          },
+              );
+            },
+          ),
         );
       }),
     );
