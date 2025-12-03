@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
 import 'package:order_pad/models/category.dart';
+import 'package:order_pad/screens/01_dashboard/dashboard_screen.dart';
 import 'package:order_pad/screens/02_new_order/category_meals_page.dart';
 import 'package:order_pad/screens/02_new_order/cart_page.dart';
 import 'package:order_pad/services/categories_service.dart';
@@ -176,7 +177,7 @@ class _HomePageState extends State<HomePage> {
                 }
 
                 return SizedBox(
-                  height: 120,
+                  height: 140,
                   child: ListView.builder(
                     scrollDirection: Axis.horizontal,
                     padding: EdgeInsets.symmetric(horizontal: 12),
@@ -184,55 +185,160 @@ class _HomePageState extends State<HomePage> {
                     itemBuilder: (context, index) {
                       final category = categories[index];
                       return Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 6.0),
+                        padding: const EdgeInsets.symmetric(horizontal: 8.0),
                         child: GestureDetector(
                           onTap: () {
                             Get.to(() => CategoryMealsPage(category: category));
                           },
                           child: Container(
-                            width: 90,
+                            width: 110,
                             child: Column(
                               children: [
+                                // Modern card with image or gradient
                                 Container(
-                                  width: 70,
-                                  height: 70,
+                                  width: 110,
+                                  height: 100,
                                   decoration: BoxDecoration(
-                                    gradient: LinearGradient(
-                                      colors: [
-                                        AppColors.primary.withOpacity(0.8),
-                                        AppColors.secondary.withOpacity(0.8),
-                                      ],
-                                      begin: Alignment.topLeft,
-                                      end: Alignment.bottomRight,
-                                    ),
-                                    shape: BoxShape.circle,
+                                    borderRadius: BorderRadius.circular(18),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: AppColors.primary.withOpacity(
-                                          0.3,
-                                        ),
-                                        blurRadius: 8,
-                                        offset: Offset(0, 4),
+                                        color: Colors.black.withOpacity(0.1),
+                                        blurRadius: 12,
+                                        offset: Offset(0, 6),
                                       ),
                                     ],
                                   ),
-                                  child: Center(
-                                    child: Icon(
-                                      Icons.restaurant_menu,
-                                      size: 32,
-                                      color: Colors.white,
-                                    ),
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(18),
+                                    child:
+                                        category.imageUrl != null &&
+                                                category.imageUrl!.isNotEmpty
+                                            ? Stack(
+                                              fit: StackFit.expand,
+                                              children: [
+                                                // Category image
+                                                Image.network(
+                                                  category.imageUrl!,
+                                                  fit: BoxFit.cover,
+                                                  errorBuilder: (_, __, ___) {
+                                                    // Fallback to gradient on error
+                                                    return Container(
+                                                      decoration: BoxDecoration(
+                                                        gradient: LinearGradient(
+                                                          colors: [
+                                                            AppColors.primary
+                                                                .withOpacity(
+                                                                  0.8,
+                                                                ),
+                                                            AppColors.secondary
+                                                                .withOpacity(
+                                                                  0.8,
+                                                                ),
+                                                          ],
+                                                          begin:
+                                                              Alignment.topLeft,
+                                                          end:
+                                                              Alignment
+                                                                  .bottomRight,
+                                                        ),
+                                                      ),
+                                                      child: Center(
+                                                        child: Icon(
+                                                          Icons.restaurant_menu,
+                                                          size: 40,
+                                                          color: Colors.white,
+                                                        ),
+                                                      ),
+                                                    );
+                                                  },
+                                                  loadingBuilder: (
+                                                    context,
+                                                    child,
+                                                    loadingProgress,
+                                                  ) {
+                                                    if (loadingProgress == null)
+                                                      return child;
+                                                    return Container(
+                                                      decoration: BoxDecoration(
+                                                        gradient: LinearGradient(
+                                                          colors: [
+                                                            AppColors.primary
+                                                                .withOpacity(
+                                                                  0.3,
+                                                                ),
+                                                            AppColors.secondary
+                                                                .withOpacity(
+                                                                  0.3,
+                                                                ),
+                                                          ],
+                                                        ),
+                                                      ),
+                                                      child: Center(
+                                                        child:
+                                                            CircularProgressIndicator(
+                                                              color:
+                                                                  AppColors
+                                                                      .primary,
+                                                              strokeWidth: 2,
+                                                            ),
+                                                      ),
+                                                    );
+                                                  },
+                                                ),
+                                                // Gradient overlay for text readability
+                                                Container(
+                                                  decoration: BoxDecoration(
+                                                    gradient: LinearGradient(
+                                                      begin:
+                                                          Alignment.topCenter,
+                                                      end:
+                                                          Alignment
+                                                              .bottomCenter,
+                                                      colors: [
+                                                        Colors.transparent,
+                                                        Colors.black
+                                                            .withOpacity(0.7),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            )
+                                            : // Fallback gradient design
+                                            Container(
+                                              decoration: BoxDecoration(
+                                                gradient: LinearGradient(
+                                                  colors: [
+                                                    AppColors.primary
+                                                        .withOpacity(0.8),
+                                                    AppColors.secondary
+                                                        .withOpacity(0.8),
+                                                  ],
+                                                  begin: Alignment.topLeft,
+                                                  end: Alignment.bottomRight,
+                                                ),
+                                              ),
+                                              child: Center(
+                                                child: Icon(
+                                                  Icons.restaurant_menu,
+                                                  size: 40,
+                                                  color: Colors.white,
+                                                ),
+                                              ),
+                                            ),
                                   ),
                                 ),
                                 SizedBox(height: 8),
+                                // Category name
                                 Text(
                                   category.name,
                                   style: TextStyle(
                                     fontWeight: FontWeight.w600,
-                                    fontSize: 12,
+                                    fontSize: 13,
+                                    color: Colors.black87,
                                   ),
                                   textAlign: TextAlign.center,
-                                  maxLines: 2,
+                                  maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),
                               ],
@@ -266,23 +372,31 @@ class _HomePageState extends State<HomePage> {
                     ),
                     borderRadius: BorderRadius.circular(16),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Welcome to Order Pad! 👋',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.primary,
+                  child: GestureDetector(
+                    onTap: () {
+                      Get.to(() => const DashboardScreen());
+                    },
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Welcome to Order Pad! 👋',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.primary,
+                          ),
                         ),
-                      ),
-                      SizedBox(height: 8),
-                      Text(
-                        'Browse our categories and add your favorite meals to the cart.',
-                        style: TextStyle(fontSize: 14, color: Colors.grey[700]),
-                      ),
-                    ],
+                        SizedBox(height: 8),
+                        Text(
+                          'Browse our categories and add your favorite meals to the cart.',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[700],
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),

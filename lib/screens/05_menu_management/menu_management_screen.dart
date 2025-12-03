@@ -41,33 +41,27 @@ class MenuManagementScreen extends StatelessWidget {
             ),
             Expanded(
               child: Obx(() {
-                final isLoading = c.categoriesLoading.value && c.categories.isEmpty;
-                final list = isLoading 
-                    ? List.generate(4, (i) => Category(id: 'dummy_$i', name: 'Category Name'))
-                    : c.categories;
-
-                if (!isLoading && c.categories.isEmpty) {
+                if (c.categoriesLoading.value && c.categories.isEmpty) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (c.categories.isEmpty) {
                   return const Center(child: Text('No categories yet'));
                 }
-                
-                return Skeletonizer(
-                  enabled: isLoading,
-                  child: ListView.separated(
-                    itemCount: list.length,
-                    separatorBuilder: (_, __) => const Divider(height: 1),
-                    itemBuilder: (_, i) {
-                      final cat = list[i];
-                      final color = _categoryColor(cat.name);
-                      final deleting = c.deletingCategoryId.value == cat.id;
-                      return CategoryCard(
-                        name: cat.name,
-                        accentColor: color,
-                        isBusy: deleting,
-                        onEdit: deleting ? null : () => _showEditCategoryDialog(context, c, cat),
-                        onDelete: deleting ? null : () => _confirmDeleteCategory(context, c, cat),
-                      );
-                    },
-                  ),
+                return ListView.separated(
+                  itemCount: c.categories.length,
+                  separatorBuilder: (_, __) => const Divider(height: 1),
+                  itemBuilder: (_, i) {
+                    final cat = c.categories[i];
+                    final color = _categoryColor(cat.name);
+                    final deleting = c.deletingCategoryId.value == cat.id;
+                    return CategoryCard(
+                      name: cat.name,
+                      accentColor: color,
+                      isBusy: deleting,
+                      onEdit: deleting ? null : () => _showEditCategoryDialog(context, c, cat),
+                      onDelete: deleting ? null : () => _confirmDeleteCategory(context, c, cat),
+                    );
+                  },
                 );
               }),
             ),
@@ -89,22 +83,12 @@ class MenuManagementScreen extends StatelessWidget {
             ),
             Expanded(
               child: Obx(() {
-                final isLoading = c.mealsLoading.value && c.meals.isEmpty;
-                final list = isLoading 
-                    ? List.generate(6, (i) => MealItem(
-                        id: 'dummy_$i', 
-                        name: 'Meal Name Placeholder', 
-                        price: 99.99, 
-                        isAvailable: true, 
-                        description: 'Description placeholder for skeleton loading',
-                        imageUrl: '',
-                      )) 
-                    : c.meals;
-
-                if (!isLoading && c.meals.isEmpty) {
+                if (c.mealsLoading.value && c.meals.isEmpty) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (c.meals.isEmpty) {
                   return const Center(child: Text('No meals found'));
                 }
-
                 return NotificationListener<ScrollNotification>(
                   onNotification: (n) {
                     if (n.metrics.pixels >= n.metrics.maxScrollExtent - 100) {
@@ -112,37 +96,34 @@ class MenuManagementScreen extends StatelessWidget {
                     }
                     return false;
                   },
-                  child: Skeletonizer(
-                    enabled: isLoading,
-                    child: ListView.separated(
-                      itemCount: list.length,
-                      separatorBuilder: (_, __) => const Divider(height: 1),
-                      itemBuilder: (_, i) {
-                        final m = list[i];
-                        final category = c.categories.firstWhere((cat) => cat.id == m.categoryId, orElse: () => Category(id: '', name: 'Uncategorized'));
-                        final accent = _categoryColor(category.name);
-                        final deleting = c.deletingMealId.value == m.id;
-                        final updating = c.savingMeal.value;
-                        
-                        final rating = c.mealRatings[m.id];
-                        final count = c.mealReviewCounts[m.id];
-                    
-                        return MealCard(
-                          meal: m,
-                          categoryName: category.name,
-                          accentColor: accent,
-                          isDeleting: deleting,
-                          isUpdating: updating,
-                          rating: rating,
-                          reviewCount: count,
-                          onEdit: deleting ? null : () => _showEditMealDialog(context, c, m),
-                          onToggleAvailable: (updating || deleting)
-                              ? null
-                              : () => c.updateMeal(m, isAvailable: !m.isAvailable, refresh: false),
-                          onDelete: deleting ? null : () => _confirmDeleteMeal(context, c, m),
-                        );
-                      },
-                    ),
+                  child: ListView.separated(
+                    itemCount: c.meals.length,
+                    separatorBuilder: (_, __) => const Divider(height: 1),
+                    itemBuilder: (_, i) {
+                      final m = c.meals[i];
+                      final category = c.categories.firstWhere((cat) => cat.id == m.categoryId, orElse: () => Category(id: '', name: 'Uncategorized'));
+                      final accent = _categoryColor(category.name);
+                      final deleting = c.deletingMealId.value == m.id;
+                      final updating = c.savingMeal.value;
+                      
+                      final rating = c.mealRatings[m.id];
+                      final count = c.mealReviewCounts[m.id];
+
+                      return MealCard(
+                        meal: m,
+                        categoryName: category.name,
+                        accentColor: accent,
+                        isDeleting: deleting,
+                        isUpdating: updating,
+                        rating: rating,
+                        reviewCount: count,
+                        onEdit: deleting ? null : () => _showEditMealDialog(context, c, m),
+                        onToggleAvailable: (updating || deleting)
+                            ? null
+                            : () => c.updateMeal(m, isAvailable: !m.isAvailable, refresh: false),
+                        onDelete: deleting ? null : () => _confirmDeleteMeal(context, c, m),
+                      );
+                    },
                   ),
                 );
               }),
@@ -169,46 +150,40 @@ class MenuManagementScreen extends StatelessWidget {
             ),
             Expanded(
               child: Obx(() {
-                final isLoading = c.ingredientsLoading.value && c.ingredients.isEmpty;
-                final list = isLoading 
-                    ? List.generate(8, (i) => Ingredient(id: 'dummy_$i', name: 'Ingredient Name', stockLevel: 100, unit: 'kg')) 
-                    : c.ingredients;
-
-                if (!isLoading && c.ingredients.isEmpty) {
+                if (c.ingredientsLoading.value && c.ingredients.isEmpty) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (c.ingredients.isEmpty) {
                   return const Center(child: Text('No ingredients yet'));
                 }
-
-                return Skeletonizer(
-                  enabled: isLoading,
-                  child: ListView.separated(
-                    itemCount: list.length,
-                    separatorBuilder: (_, __) => const Divider(height: 1),
-                    itemBuilder: (_, i) {
-                      final ing = list[i];
-                      final deleting = c.deletingIngredientId.value == ing.id;
-                      return ListTile(
-                        title: Text(ing.name),
-                        subtitle: Text('Stock: ${ing.stockLevel} ${ing.unit}'),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            if (deleting)
-                              const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
-                            else ...[
-                              IconButton(
-                                icon: const Icon(Icons.edit, color: Colors.blue),
-                                onPressed: () => _showEditIngredientDialog(context, c, ing),
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.delete, color: Colors.red),
-                                onPressed: () => _confirmDeleteIngredient(context, c, ing),
-                              ),
-                            ],
+                return ListView.separated(
+                  itemCount: c.ingredients.length,
+                  separatorBuilder: (_, __) => const Divider(height: 1),
+                  itemBuilder: (_, i) {
+                    final ing = c.ingredients[i];
+                    final deleting = c.deletingIngredientId.value == ing.id;
+                    return ListTile(
+                      title: Text(ing.name),
+                      subtitle: Text('Stock: ${ing.stockLevel} ${ing.unit}'),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (deleting)
+                            const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                          else ...[
+                            IconButton(
+                              icon: const Icon(Icons.edit, color: Colors.blue),
+                              onPressed: () => _showEditIngredientDialog(context, c, ing),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.delete, color: Colors.red),
+                              onPressed: () => _confirmDeleteIngredient(context, c, ing),
+                            ),
                           ],
-                        ),
-                      );
-                    },
-                  ),
+                        ],
+                      ),
+                    );
+                  },
                 );
               }),
             ),
@@ -237,117 +212,288 @@ class MenuManagementScreen extends StatelessWidget {
     );
   }
 
-  void _showAddCategoryDialog(BuildContext context, MenuManagementController c) {
+  void _showAddCategoryDialog(
+    BuildContext context,
+    MenuManagementController c,
+  ) {
     final nameCtl = TextEditingController();
+    final imageCtl = TextEditingController();
     _showAnimatedDialog(
       context: context,
-      builder: (_) => Obx(() => AlertDialog(
-            title: const Text('Add Category'),
-            content: TextField(controller: nameCtl, decoration: const InputDecoration(labelText: 'Name')),
-            actions: [
-              TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-              ElevatedButton(
-                onPressed: c.savingCategory.value
-                    ? null
-                    : () async {
-                        await c.addCategory(nameCtl.text.trim());
-                        if (context.mounted) Navigator.pop(context);
-                      },
-                child: c.savingCategory.value
-                    ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
-                    : const Text('Save'),
+      builder:
+          (_) => Obx(
+            () => AlertDialog(
+              title: const Text('Add Category'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: nameCtl,
+                    decoration: const InputDecoration(labelText: 'Name'),
+                  ),
+                  TextField(
+                    controller: imageCtl,
+                    decoration: InputDecoration(
+                      labelText: 'Image URL (optional)',
+                      suffixIcon: IconButton(
+                        icon: const Icon(Icons.photo_library),
+                        onPressed: () async {
+                          final picker = ImagePicker();
+                          final image = await picker.pickImage(
+                            source: ImageSource.gallery,
+                          );
+                          if (image != null) {
+                            imageCtl.text = image.path;
+                          }
+                        },
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ],
-          )),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed:
+                      c.savingCategory.value
+                          ? null
+                          : () async {
+                            final imageUrl = imageCtl.text.trim();
+                            await c.addCategory(
+                              nameCtl.text.trim(),
+                              imageUrl: imageUrl.isEmpty ? null : imageUrl,
+                            );
+                            if (context.mounted) Navigator.pop(context);
+                          },
+                  child:
+                      c.savingCategory.value
+                          ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                          : const Text('Save'),
+                ),
+              ],
+            ),
+          ),
     );
   }
 
-  void _showEditCategoryDialog(BuildContext context, MenuManagementController c, Category cat) {
+  void _showEditCategoryDialog(
+    BuildContext context,
+    MenuManagementController c,
+    Category cat,
+  ) {
     final nameCtl = TextEditingController(text: cat.name);
+    final imageCtl = TextEditingController(text: cat.imageUrl ?? '');
+
     _showAnimatedDialog(
       context: context,
-      builder: (_) => Obx(() => AlertDialog(
-            title: const Text('Edit Category'),
-            content: TextField(controller: nameCtl, decoration: const InputDecoration(labelText: 'Name')),
-            actions: [
-              TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-              ElevatedButton(
-                onPressed: c.savingCategory.value
-                    ? null
-                    : () async {
-                        await c.updateCategory(cat.id, nameCtl.text.trim());
-                        if (context.mounted) Navigator.pop(context);
-                      },
-                child: c.savingCategory.value
-                    ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
-                    : const Text('Save'),
+      builder:
+          (_) => Obx(
+            () => AlertDialog(
+              title: const Text('Edit Category'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: nameCtl,
+                    decoration: const InputDecoration(labelText: 'Name'),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: imageCtl,
+                    decoration: InputDecoration(
+                      labelText: 'Image URL (optional)',
+                      hintText: 'https://example.com/image.jpg',
+                      suffixIcon: IconButton(
+                        icon: const Icon(Icons.photo_library),
+                        onPressed: () async {
+                          final picker = ImagePicker();
+                          final image = await picker.pickImage(
+                            source: ImageSource.gallery,
+                          );
+                          if (image != null) {
+                            imageCtl.text = image.path;
+                          }
+                        },
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ],
-          )),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed:
+                      c.savingCategory.value
+                          ? null
+                          : () async {
+                            final imageUrl = imageCtl.text.trim();
+                            await c.updateCategory(
+                              cat.id,
+                              nameCtl.text.trim(),
+                              imageUrl: imageUrl.isEmpty ? null : imageUrl,
+                            );
+                            if (context.mounted) Navigator.pop(context);
+                          },
+                  child:
+                      c.savingCategory.value
+                          ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                          : const Text('Save'),
+                ),
+              ],
+            ),
+          ),
     );
   }
 
-  void _showAddIngredientDialog(BuildContext context, MenuManagementController c) {
+  void _showAddIngredientDialog(
+    BuildContext context,
+    MenuManagementController c,
+  ) {
     final nameCtl = TextEditingController();
     final stockCtl = TextEditingController();
     final unitCtl = TextEditingController(text: 'pcs');
     _showAnimatedDialog(
       context: context,
-      builder: (_) => Obx(() => AlertDialog(
-            title: const Text('Add Ingredient'),
-            content: Column(mainAxisSize: MainAxisSize.min, children: [
-              TextField(controller: nameCtl, decoration: const InputDecoration(labelText: 'Name')),
-              TextField(controller: stockCtl, decoration: const InputDecoration(labelText: 'Stock Level'), keyboardType: TextInputType.numberWithOptions(decimal: true)),
-              TextField(controller: unitCtl, decoration: const InputDecoration(labelText: 'Unit (e.g. kg, pcs)')),
-            ]),
-            actions: [
-              TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-              ElevatedButton(
-                onPressed: c.savingIngredient.value
-                    ? null
-                    : () async {
-                        final stock = double.tryParse(stockCtl.text.trim()) ?? 0;
-                        await c.addIngredient(nameCtl.text.trim(), stock, unitCtl.text.trim());
-                        if (context.mounted) Navigator.pop(context);
-                      },
-                child: c.savingIngredient.value
-                    ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
-                    : const Text('Save'),
+      builder:
+          (_) => Obx(
+            () => AlertDialog(
+              title: const Text('Add Ingredient'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: nameCtl,
+                    decoration: const InputDecoration(labelText: 'Name'),
+                  ),
+                  TextField(
+                    controller: stockCtl,
+                    decoration: const InputDecoration(labelText: 'Stock Level'),
+                    keyboardType: TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                  ),
+                  TextField(
+                    controller: unitCtl,
+                    decoration: const InputDecoration(
+                      labelText: 'Unit (e.g. kg, pcs)',
+                    ),
+                  ),
+                ],
               ),
-            ],
-          )),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed:
+                      c.savingIngredient.value
+                          ? null
+                          : () async {
+                            final stock =
+                                double.tryParse(stockCtl.text.trim()) ?? 0;
+                            await c.addIngredient(
+                              nameCtl.text.trim(),
+                              stock,
+                              unitCtl.text.trim(),
+                            );
+                            if (context.mounted) Navigator.pop(context);
+                          },
+                  child:
+                      c.savingIngredient.value
+                          ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                          : const Text('Save'),
+                ),
+              ],
+            ),
+          ),
     );
   }
 
-  void _showEditIngredientDialog(BuildContext context, MenuManagementController c, Ingredient ing) {
+  void _showEditIngredientDialog(
+    BuildContext context,
+    MenuManagementController c,
+    Ingredient ing,
+  ) {
     final nameCtl = TextEditingController(text: ing.name);
     final stockCtl = TextEditingController(text: ing.stockLevel.toString());
     final unitCtl = TextEditingController(text: ing.unit);
     _showAnimatedDialog(
       context: context,
-      builder: (_) => Obx(() => AlertDialog(
-            title: const Text('Edit Ingredient'),
-            content: Column(mainAxisSize: MainAxisSize.min, children: [
-              TextField(controller: nameCtl, decoration: const InputDecoration(labelText: 'Name')),
-              TextField(controller: stockCtl, decoration: const InputDecoration(labelText: 'Stock Level'), keyboardType: TextInputType.numberWithOptions(decimal: true)),
-              TextField(controller: unitCtl, decoration: const InputDecoration(labelText: 'Unit')),
-            ]),
-            actions: [
-              TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-              ElevatedButton(
-                onPressed: c.savingIngredient.value
-                    ? null
-                    : () async {
-                        final stock = double.tryParse(stockCtl.text.trim()) ?? 0;
-                        await c.updateIngredient(ing.id, nameCtl.text.trim(), stock, unitCtl.text.trim());
-                        if (context.mounted) Navigator.pop(context);
-                      },
-                child: c.savingIngredient.value
-                    ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
-                    : const Text('Save'),
+      builder:
+          (_) => Obx(
+            () => AlertDialog(
+              title: const Text('Edit Ingredient'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: nameCtl,
+                    decoration: const InputDecoration(labelText: 'Name'),
+                  ),
+                  TextField(
+                    controller: stockCtl,
+                    decoration: const InputDecoration(labelText: 'Stock Level'),
+                    keyboardType: TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                  ),
+                  TextField(
+                    controller: unitCtl,
+                    decoration: const InputDecoration(labelText: 'Unit'),
+                  ),
+                ],
               ),
-            ],
-          )),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed:
+                      c.savingIngredient.value
+                          ? null
+                          : () async {
+                            final stock =
+                                double.tryParse(stockCtl.text.trim()) ?? 0;
+                            await c.updateIngredient(
+                              ing.id,
+                              nameCtl.text.trim(),
+                              stock,
+                              unitCtl.text.trim(),
+                            );
+                            if (context.mounted) Navigator.pop(context);
+                          },
+                  child:
+                      c.savingIngredient.value
+                          ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                          : const Text('Save'),
+                ),
+              ],
+            ),
+          ),
     );
   }
 
@@ -356,7 +502,8 @@ class MenuManagementScreen extends StatelessWidget {
     final priceCtl = TextEditingController();
     final descCtl = TextEditingController();
     final imageCtl = TextEditingController();
-    String selectedCat = c.selectedCategoryId.value.isNotEmpty ? c.selectedCategoryId.value : '';
+    String selectedCat =
+        c.selectedCategoryId.value.isNotEmpty ? c.selectedCategoryId.value : '';
     final selectedIngredients = <String>{};
 
     _showAnimatedDialog(
@@ -445,29 +592,37 @@ class MenuManagementScreen extends StatelessWidget {
     );
   }
 
-  void _showEditMealDialog(BuildContext context, MenuManagementController c, MealItem m) {
+  void _showEditMealDialog(
+    BuildContext context,
+    MenuManagementController c,
+    MealItem m,
+  ) {
     final nameCtl = TextEditingController(text: m.name);
     final priceCtl = TextEditingController(text: m.price.toStringAsFixed(2));
     final descCtl = TextEditingController(text: m.description ?? '');
     final imageCtl = TextEditingController(text: m.imageUrl ?? '');
     String selectedCat = m.categoryId ?? '';
-    
+
     final selectedIngredients = <String>{};
     bool ingredientsLoaded = false;
 
     _showAnimatedDialog(
       context: context,
-      builder: (_) => StatefulBuilder(builder: (ctx, setState) {
-        if (!ingredientsLoaded) {
-          c.fetchMealIngredients(m.id).then((list) {
-             if (ctx.mounted) {
-               setState(() {
-                 selectedIngredients.addAll(list.map((e) => e.ingredientId));
-                 ingredientsLoaded = true;
-               });
-             }
-           });
-        }
+      builder:
+          (_) => StatefulBuilder(
+            builder: (ctx, setState) {
+              if (!ingredientsLoaded) {
+                c.fetchMealIngredients(m.id).then((list) {
+                  if (ctx.mounted) {
+                    setState(() {
+                      selectedIngredients.addAll(
+                        list.map((e) => e.ingredientId),
+                      );
+                      ingredientsLoaded = true;
+                    });
+                  }
+                });
+              }
 
         return AlertDialog(
           title: const Text('Edit Meal'),
@@ -566,16 +721,25 @@ class MenuManagementScreen extends StatelessWidget {
     );
   }
 
-  Future<void> _confirmDeleteCategory(BuildContext context, MenuManagementController c, Category cat) async {
+  Future<void> _confirmDeleteCategory(
+    BuildContext context,
+    MenuManagementController c,
+    Category cat,
+  ) async {
     final confirmed = await _showDeleteConfirmation(
       context,
       title: 'Delete Category',
-      message: 'Are you sure you want to delete "${cat.name}"? This action cannot be undone.',
+      message:
+          'Are you sure you want to delete "${cat.name}"? This action cannot be undone.',
     );
     if (confirmed) await c.deleteCategory(cat.id);
   }
 
-  Future<void> _confirmDeleteMeal(BuildContext context, MenuManagementController c, MealItem meal) async {
+  Future<void> _confirmDeleteMeal(
+    BuildContext context,
+    MenuManagementController c,
+    MealItem meal,
+  ) async {
     final confirmed = await _showDeleteConfirmation(
       context,
       title: 'Delete Meal',
@@ -584,7 +748,11 @@ class MenuManagementScreen extends StatelessWidget {
     if (confirmed) await c.deleteMeal(meal.id);
   }
 
-  Future<void> _confirmDeleteIngredient(BuildContext context, MenuManagementController c, Ingredient ing) async {
+  Future<void> _confirmDeleteIngredient(
+    BuildContext context,
+    MenuManagementController c,
+    Ingredient ing,
+  ) async {
     final confirmed = await _showDeleteConfirmation(
       context,
       title: 'Delete Ingredient',
@@ -600,18 +768,22 @@ class MenuManagementScreen extends StatelessWidget {
   }) async {
     final result = await _showAnimatedDialog<bool>(
       context: context,
-      builder: (_) => AlertDialog(
-        title: Text(title),
-        content: Text(message),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('Delete'),
+      builder:
+          (_) => AlertDialog(
+            title: Text(title),
+            content: Text(message),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(context, true),
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                child: const Text('Delete'),
+              ),
+            ],
           ),
-        ],
-      ),
     );
     return result ?? false;
   }
@@ -627,16 +799,28 @@ class _CategoryFilter extends StatelessWidget {
       return DropdownButtonFormField<String>(
         value: value,
         items: [
-          const DropdownMenuItem<String>(value: '', child: Text('All Categories')),
+          const DropdownMenuItem<String>(
+            value: '',
+            child: Text('All Categories'),
+          ),
           ...c.categories.map((e) {
             final color = _categoryColor(e.name);
             return DropdownMenuItem<String>(
               value: e.id,
-              child: Row(children: [
-                Container(width: 10, height: 10, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
-                const SizedBox(width: 8),
-                Text(e.name),
-              ]),
+              child: Row(
+                children: [
+                  Container(
+                    width: 10,
+                    height: 10,
+                    decoration: BoxDecoration(
+                      color: color,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(e.name),
+                ],
+              ),
             );
           }).toList(),
         ],
@@ -651,6 +835,7 @@ final categoryPalette = {
   'Appetizers': Colors.orange,
   'Main Courses': Colors.blue,
   'Drinks': Colors.green,
+  'Desserts': Colors.pink,
   'Desserts': Colors.pink,
 };
 Color _categoryColor(String name) {
