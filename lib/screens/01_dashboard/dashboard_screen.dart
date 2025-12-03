@@ -1,13 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:order_pad/screens/01_dashboard/dashboard_controller.dart';
-import 'package:order_pad/screens/02_new_order/home_page.dart';
+import 'package:order_pad/screens/main_navigation_screen.dart';
 import 'package:order_pad/screens/03_active_orders/active_orders_screen.dart';
-import 'package:order_pad/screens/04_order_history/order_history_screen.dart';
 import 'package:order_pad/widgets/colors.dart';
-
 import '../05_menu_management/menu_management_screen.dart';
-import '../06_feedback/feedback_screen.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
@@ -16,23 +13,16 @@ class DashboardScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = Get.put(DashboardController());
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Dashboard'),
-      ),
+      appBar: AppBar(title: const Text('Dashboard')),
       drawer: Drawer(
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
             DrawerHeader(
-              decoration: BoxDecoration(
-                color: AppColors.primary,
-              ),
+              decoration: BoxDecoration(color: AppColors.primary),
               child: const Text(
                 'Order Pad',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 24,
-                ),
+                style: TextStyle(color: Colors.white, fontSize: 24),
               ),
             ),
             ListTile(
@@ -51,16 +41,16 @@ class DashboardScreen extends StatelessWidget {
                 Get.to(() => ActiveOrdersScreen());
               },
             ),
-             ListTile(
+            ListTile(
               leading: const Icon(Icons.add_shopping_cart),
               title: const Text('New Order'),
               onTap: () {
                 Get.back();
                 // Navigate to New Order
-                 Get.toNamed('/new_order'); // Assuming route or just use class
+                Get.to(() => const MainNavigationScreen());
               },
             ),
-             ListTile(
+            ListTile(
               leading: const Icon(Icons.history),
               title: const Text('Order History'),
               onTap: () {
@@ -68,12 +58,12 @@ class DashboardScreen extends StatelessWidget {
                 // Navigate to History
               },
             ),
-             ListTile(
+            ListTile(
               leading: const Icon(Icons.menu_book),
               title: const Text('Menu Management'),
               onTap: () {
                 Get.to(MenuManagementScreen());
-                 // Navigate to Menu Management
+                // Navigate to Menu Management
               },
             ),
           ],
@@ -109,17 +99,22 @@ class DashboardScreen extends StatelessWidget {
                           selected: isSelected,
                           onSelected: (_) => c.selectCategory(null),
                           selectedColor: AppColors.primary,
-                          labelStyle: TextStyle(color: isSelected ? Colors.white : Colors.black),
+                          labelStyle: TextStyle(
+                            color: isSelected ? Colors.white : Colors.black,
+                          ),
                         );
                       }
                       final category = c.categories[i - 1];
-                      final isSelected = c.selectedCategoryId.value == category.id;
+                      final isSelected =
+                          c.selectedCategoryId.value == category.id;
                       return ChoiceChip(
                         label: Text(category.name),
                         selected: isSelected,
                         onSelected: (_) => c.selectCategory(category.id),
                         selectedColor: AppColors.primary,
-                        labelStyle: TextStyle(color: isSelected ? Colors.white : Colors.black),
+                        labelStyle: TextStyle(
+                          color: isSelected ? Colors.white : Colors.black,
+                        ),
                       );
                     },
                   );
@@ -139,31 +134,38 @@ class DashboardScreen extends StatelessWidget {
                       ),
                     );
                   }
-                  
+
                   return NotificationListener<ScrollNotification>(
                     onNotification: (ScrollNotification scrollInfo) {
                       if (!c.isMoreLoading.value &&
                           c.hasMore &&
-                          scrollInfo.metrics.pixels == scrollInfo.metrics.maxScrollExtent) {
+                          scrollInfo.metrics.pixels ==
+                              scrollInfo.metrics.maxScrollExtent) {
                         c.loadMore();
                       }
                       return false;
                     },
                     child: ListView.separated(
-                      itemCount: c.topSellingMeals.length + (c.isMoreLoading.value ? 1 : 0),
+                      itemCount:
+                          c.topSellingMeals.length +
+                          (c.isMoreLoading.value ? 1 : 0),
                       separatorBuilder: (_, __) => const SizedBox(height: 12),
                       itemBuilder: (_, i) {
                         if (i == c.topSellingMeals.length) {
-                          return const Center(child: Padding(
-                            padding: EdgeInsets.all(8.0),
-                            child: CircularProgressIndicator(),
-                          ));
+                          return const Center(
+                            child: Padding(
+                              padding: EdgeInsets.all(8.0),
+                              child: CircularProgressIndicator(),
+                            ),
+                          );
                         }
                         final item = c.topSellingMeals[i];
-                        
+
                         return Card(
                           elevation: 2,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                           child: ListTile(
                             contentPadding: const EdgeInsets.all(12),
                             leading: Container(
@@ -172,27 +174,45 @@ class DashboardScreen extends StatelessWidget {
                               decoration: BoxDecoration(
                                 color: Colors.grey.shade200,
                                 borderRadius: BorderRadius.circular(8),
-                                image: item.meal.imageUrl != null && item.meal.imageUrl!.isNotEmpty
-                                    ? DecorationImage(image: NetworkImage(item.meal.imageUrl!), fit: BoxFit.cover)
-                                    : null,
+                                image:
+                                    item.meal.imageUrl != null &&
+                                            item.meal.imageUrl!.isNotEmpty
+                                        ? DecorationImage(
+                                          image: NetworkImage(
+                                            item.meal.imageUrl!,
+                                          ),
+                                          fit: BoxFit.cover,
+                                        )
+                                        : null,
                               ),
-                              child: item.meal.imageUrl == null || item.meal.imageUrl!.isEmpty
-                                  ? const Icon(Icons.fastfood, color: Colors.grey)
-                                  : null,
+                              child:
+                                  item.meal.imageUrl == null ||
+                                          item.meal.imageUrl!.isEmpty
+                                      ? const Icon(
+                                        Icons.fastfood,
+                                        color: Colors.grey,
+                                      )
+                                      : null,
                             ),
                             title: Row(
                               children: [
                                 Expanded(
                                   child: Text(
                                     item.meal.name,
-                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                    ),
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
                                 if (item.categoryName != null)
                                   Container(
                                     margin: const EdgeInsets.only(left: 8),
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 2,
+                                    ),
                                     decoration: BoxDecoration(
                                       color: Colors.grey.shade200,
                                       borderRadius: BorderRadius.circular(4),
@@ -226,7 +246,10 @@ class DashboardScreen extends StatelessWidget {
                                 ),
                                 const Text(
                                   'Sold',
-                                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey,
+                                  ),
                                 ),
                               ],
                             ),

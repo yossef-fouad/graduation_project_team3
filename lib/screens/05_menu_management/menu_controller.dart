@@ -11,23 +11,23 @@ class MenuManagementController extends GetxController {
   final categories = <Category>[].obs;
   final meals = <MealItem>[].obs;
   final ingredients = <Ingredient>[].obs;
-  
+
   final categoriesLoading = true.obs;
   final mealsLoading = true.obs;
   final ingredientsLoading = true.obs;
-  
+
   final savingCategory = false.obs;
   final savingMeal = false.obs;
   final savingIngredient = false.obs;
-  
+
   final deletingCategoryId = ''.obs;
   final deletingMealId = ''.obs;
   final deletingIngredientId = ''.obs;
-  
+
   final updatingMealId = ''.obs;
   final loadingMore = false.obs;
   final hasMore = true.obs;
-  
+
   final selectedCategoryId = ''.obs;
   int mealOffset = 0;
   static const pageSize = 20;
@@ -114,21 +114,25 @@ class MenuManagementController extends GetxController {
     }
   }
 
-  Future<void> addCategory(String name) async {
+  Future<void> addCategory(String name, {String? imageUrl}) async {
     if (name.isEmpty) return;
     savingCategory.value = true;
     try {
-      await _service.addCategory(name);
+      await _service.addCategory(name, imageUrl: imageUrl);
       await fetchCategories();
     } finally {
       savingCategory.value = false;
     }
   }
 
-  Future<void> updateCategory(String id, String name) async {
+  Future<void> updateCategory(
+    String id,
+    String name, {
+    String? imageUrl,
+  }) async {
     savingCategory.value = true;
     try {
-      await _service.updateCategory(id, name);
+      await _service.updateCategory(id, name, imageUrl: imageUrl);
       await fetchCategories();
     } finally {
       savingCategory.value = false;
@@ -157,7 +161,12 @@ class MenuManagementController extends GetxController {
     }
   }
 
-  Future<void> updateIngredient(String id, String name, double stock, String unit) async {
+  Future<void> updateIngredient(
+    String id,
+    String name,
+    double stock,
+    String unit,
+  ) async {
     savingIngredient.value = true;
     try {
       await _service.updateIngredient(id, name, stock, unit);
@@ -226,11 +235,11 @@ class MenuManagementController extends GetxController {
     if (imageUrl != null) update['image_url'] = imageUrl;
     if (categoryId != null) update['category_id'] = categoryId;
     if (isAvailable != null) update['is_available'] = isAvailable;
-    
+
     if (ingredientIds != null) refresh = true;
 
     if (update.isEmpty && ingredientIds == null) return;
-    
+
     final trackInline = !refresh;
     if (trackInline) updatingMealId.value = meal.id;
     try {
