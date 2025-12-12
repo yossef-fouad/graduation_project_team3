@@ -8,11 +8,12 @@ import 'package:order_pad/screens/03_active_orders/active_orders_screen.dart';
 import 'package:order_pad/screens/04_order_history/order_history_screen.dart';
 import 'package:order_pad/widgets/colors.dart';
 import '../05_menu_management/menu_management_screen.dart';
-import '../06_feedback/feedback_screen.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:order_pad/screens/role_selection_screen.dart';
 import 'package:order_pad/screens/07_reviews/order_selection_screen.dart';
+import 'package:liquid_navbar/liquid_navbar.dart';
+
 
 
 class DashboardScreen extends StatelessWidget {
@@ -103,7 +104,8 @@ class DashboardScreen extends StatelessWidget {
           ],
         ),
       ),
-      body: RefreshIndicator(
+      body:
+      RefreshIndicator(
         onRefresh: () async {
           c.fetchTopSellingMeals(refresh: true);
           c.fetchDashboardStats();
@@ -318,6 +320,7 @@ class DashboardScreen extends StatelessWidget {
             ],
           ),
         ),
+
       ),
     );
   }
@@ -377,5 +380,6 @@ class DashboardScreen extends StatelessWidget {
         ],
       ),
     );
+
   }
 }

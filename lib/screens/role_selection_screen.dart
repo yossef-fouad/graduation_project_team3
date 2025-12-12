@@ -6,6 +6,8 @@ import 'package:order_pad/screens/main_navigation_screen.dart';
 import 'package:order_pad/widgets/colors.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '01_dashboard/cool_screen.dart';
+
 class RoleSelectionScreen extends StatelessWidget {
   const RoleSelectionScreen({super.key});
 
@@ -118,7 +120,7 @@ class RoleSelectionScreen extends StatelessWidget {
                 final prefs = await SharedPreferences.getInstance();
                 await prefs.setString('user_role', 'owner');
                 Get.back(); // Close dialog
-                Get.offAll(() => DashboardScreen());
+                Get.offAll(() => CoolScreen());
               } else {
                 Get.snackbar(
                   'Error',

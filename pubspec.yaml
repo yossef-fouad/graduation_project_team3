@@ -43,8 +43,10 @@ dependencies:
   intl: ^0.20.2
   image_picker: ^1.1.2
   flutter_rating_bar: ^4.0.1
-  skeletonizer: ^2.0.0
+  skeletonizer: ^2.1.1
   shared_preferences: ^2.5.3
+  liquid_navbar: ^2.0.3
+  flutter_screenutil: ^5.9.3
 
 dev_dependencies:
   flutter_test:

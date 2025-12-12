@@ -1,4 +1,6 @@
 
+import 'package:carousel_slider/carousel_options.dart';
+import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
@@ -12,6 +14,8 @@ import 'package:order_pad/widgets/colors.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:order_pad/screens/role_selection_screen.dart';
 import 'package:skeletonizer/skeletonizer.dart';
+
+import '../../services/categories_service.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});

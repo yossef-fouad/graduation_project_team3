@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
+import 'package:order_pad/screens/01_dashboard/cool_screen.dart';
 import 'package:order_pad/screens/01_dashboard/dashboard_screen.dart';
 import 'package:order_pad/screens/main_navigation_screen.dart';
 import 'package:order_pad/screens/role_selection_screen.dart';
-
-// ... imports
-
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:order_pad/screens/03_active_orders/active_orders_screen.dart';
@@ -28,28 +27,36 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GetMaterialApp(
-      debugShowCheckedModeBanner: false,
-      defaultTransition: Transition.native,
-      transitionDuration: const Duration(milliseconds: 500),
-      theme: ThemeData(
-        useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF056B4C),
-        ).copyWith(
-          secondary: const Color(0xFFE59D1B),
-          tertiary: const Color(0xFF9FCCD5),
-          error: const Color(0xFFD32F2F),
-        ),
-        pageTransitionsTheme: const PageTransitionsTheme(
-          builders: {
-            TargetPlatform.android: CustomPageTransitionBuilder(),
-            TargetPlatform.iOS: CustomPageTransitionBuilder(),
-            TargetPlatform.windows: CustomPageTransitionBuilder(),
-          },
-        ),
-      ),
-      home: const RoleCheckScreen(),
+    return ScreenUtilInit(
+      designSize: const Size(375, 812), // Common mobile design size
+      minTextAdapt: true,
+      splitScreenMode: true,
+      builder: (context, child) {
+        return GetMaterialApp(
+          debugShowCheckedModeBanner: false,
+          defaultTransition: Transition.native,
+          transitionDuration: const Duration(milliseconds: 500),
+          theme: ThemeData(
+            useMaterial3: true,
+            colorScheme: ColorScheme.fromSeed(
+              seedColor: const Color(0xFF056B4C),
+            ).copyWith(
+              secondary: const Color(0xFFE59D1B),
+              tertiary: const Color(0xFF9FCCD5),
+              error: const Color(0xFFD32F2F),
+            ),
+            pageTransitionsTheme: const PageTransitionsTheme(
+              builders: {
+                TargetPlatform.android: CustomPageTransitionBuilder(),
+                TargetPlatform.iOS: CustomPageTransitionBuilder(),
+                TargetPlatform.windows: CustomPageTransitionBuilder(),
+              },
+            ),
+          ),
+          home: child,
+        );
+      },
+      child: RoleSelectionScreen(),
     );
   }
 }
